@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dyad Finder</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<body onload="populateNames()">
+  <div id="me">
+    <p>Select your name</p>
+  </div>
+  <hr/>
+  <div id="them">
+  </div>
+  <hr/>
+  <div id="unselected">
+  </div>
+  <hr/>
+  <p onclick="sendResults()">Submit</p>
+</body>
+<script>
+
+  var myName;
+
+  var names = [
+    'Arthur',
+    'Jenny',
+    'Luca',
+    'Sarah'
+  ];
+
+  function sendResults() {
+    console.log("Sending");
+    $.each($('#them').find('p'), function (index, element) {
+      console.log("Them: ", $(element).text());
+    });
+  };
+
+  function switchPosition(element) {
+    console.log("Switching element from " + $(element).data('location'));
+    if (myName == undefined) {
+      myName = $(element).find('p').text();
+      moveTo(element, 'me');
+      return;
+    }
+    if ($(element).data('location') == "me") {
+      moveTo(element, 'unselected');
+      myName = undefined;
+      return; 
+    }
+    if ($(element).data('location') == "them") {
+      moveTo(element, 'unselected');
+    } else {
+      moveTo(element, 'them');
+    }
+  };
+
+  function moveTo(element, location) {
+    if ($(element).data('location') != null) {
+      var currentLocation = $(element).data('location');
+      $(currentLocation).remove(element);
+    }
+    $("#" + location).append(element);
+    $(element).data('location', location);
+  };
+
+  function createButton(name) {
+    var button = document.createElement('div');
+    var label = document.createElement('p');
+    label.append(name);
+    button.append(label);
+    $(button).attr("class", "person");
+    $(button).click(function() { switchPosition(button); });
+    return button;
+  };
+
+  function populateNames() {
+    console.log("Populating");
+    $.each(names, function(index, name) {
+      console.log(name);
+      var button = createButton(name);
+      moveTo(button, 'unselected');
+    }); 
+  }
+
+</script>
+</html>
