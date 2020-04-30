@@ -5,10 +5,13 @@ import * as admin from 'firebase-admin';
 
 import * as express from 'express';
 import axios from 'axios';
+import * as cors from 'cors';
 
 admin.initializeApp();
 
 const app = express();
+
+app.use(cors());
 
 app.post('/group/:id', (req, res) => {
   const postData = Object.assign({}, req.body);
@@ -18,11 +21,11 @@ app.post('/group/:id', (req, res) => {
   })
     .then(doc => {
       console.log("Created group", doc);
-      res.send("Success");
+      res.status(201).json({ members: postData.members });
     })
     .catch(error => {
       console.log("Unable to create group", error);
-      res.send("Error");
+      res.status(500).json({ error: error.message });
     });
 });
 
@@ -46,12 +49,12 @@ app.delete('/group/:id', (req, res) => {
     .then(deleted => {
       return admin.firestore().collection('groups').doc(req.params.id).delete()
         .then(ref => {
-          res.send("Deleted: " + deleted);
+          res.status(200).json({ "result": "deleted" });
         });
     })
     .catch(error => {
       console.log("error deleting group " + req.params.id, error);
-      res.send("Error");
+      res.status(500).json({ error: error.message });
     });
 });
 
@@ -85,7 +88,7 @@ app.get('/group/:id/raw_preferences', (req, res) => {
   })
     .catch(error => {
       console.log("Unable to get match result for group " + req.params.id, error);
-      res.send('error');
+      res.status(500).json({ error: error.message });
     });
 });
 
@@ -97,7 +100,7 @@ app.get('/group/:id', (req, res) => {
   return admin.firestore().collection('groups').doc(req.params.id).get()
     .then(doc => {
       if (!doc.exists) {
-        res.status(200).json({});
+        res.status(200).json({ members: [] });
       } else {
         const data = doc.data() as GroupRecord;
         res.status(200).json(data);
@@ -105,7 +108,7 @@ app.get('/group/:id', (req, res) => {
     })
     .catch(function(error) {
       console.log("Unable to read group " + req.params.id, error);
-      res.send("Error\n\n");
+      res.status(500).json({ error: error.message });
     });
 })
 
@@ -127,7 +130,7 @@ app.get('/group/:id/matches', (req, res) => {
   })
     .catch(error => {
       console.log("Unable to get match result for group " + req.params.id, error);
-      res.send('error');
+      res.status(500).json({ error: error.message });
     });
 });
 
@@ -140,11 +143,14 @@ app.post('/group/:id/preference', (req, res) => {
   })
     .then(function(doc) {
       console.log("Saved doc", doc);
-      res.send("Success\n\n");
+      res.status(201).json({
+        'me': postData.me,
+        'preferences': postData.preferences
+      });
     })
     .catch(function(error) {
       console.log("Unable to save doc", error);
-      res.send("Error\n\n");
+      res.status(500).json({ error: error.message });
     });
 });
 

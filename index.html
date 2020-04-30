@@ -4,34 +4,134 @@
   <title>Dyad Finder</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
-<body onload="populateNames()">
-  <div id="me">
-    <p>Select your name</p>
+<body onload="start()">
+  <div id="loading" style="display: none" class="screen">
+    <p>Loading...</p>
   </div>
-  <hr/>
-  <div id="them">
+  <div id="select-group" style="display: none" class="screen">
+    <p>Select Group</p>
+    <input type="text" id="group-name"></input>
+    <button type="submit" class="default" onclick="navigateToGroup()">Select Group</button>
   </div>
-  <hr/>
-  <div id="unselected">
+  <div id="populate-group" style="display:none" class="screen">
+    <p>Populate Group <span id="display-group-name"></span></p>
+    <div id="group-members">
+    </div>
+    <input type="text" id="member-name"></input>
+    <button type="submit" class="default" onclick="addMemberToGroup()">Add Member</button>
+    <div>
+      <button type="submit" onclick="updateGroup()">Update Group</button>
+    </div>
   </div>
-  <hr/>
-  <p onclick="sendResults()">Submit</p>
+  <div id="enter-preferences" style="display: none" class="screen">
+    <div id="me">
+      <p>Select your name</p>
+    </div>
+    <hr/>
+    <div id="them">
+    </div>
+    <hr/>
+    <div id="unselected">
+    </div>
+    <hr/>
+    <p onclick="sendResults()">Submit</p>
+  </div>
+  <div id="thank-you" style="display:none" class="screen">
+    <p>Thank you!</p>
+  </div>
+  <div id="error" style="display:none" class="screen">
+    <p>Error - please try again</p>
+  </div>
 </body>
 <script>
 
   var myName;
+  var groupName;
+
+  var BASE_URL = "https://europe-west1-dyad-finder.cloudfunctions.net/dyad";
 
   var names = [
-    'Arthur',
-    'Jenny',
-    'Luca',
-    'Sarah'
   ];
 
+  function groupURL() {
+    return BASE_URL + "/group/" + groupName;
+  };
+
+  function preferenceURL() {
+    return groupURL() + "/preference"; 
+  };
+
+  function getGroupMembers() {
+    return $.ajax({
+      url: groupURL(),
+      dataType: 'json'
+    }).then(function(data, textStatus, jqXHR) {
+      return data;
+    });
+  };
+
+  function updateGroup() {
+    $('#populate-group input, #populate-group button').prop("disabled", true);
+    $.ajax({
+      url: groupURL(),
+      method: 'post',
+      data: JSON.stringify({members: names}),
+      contentType: 'application/json',
+      dataType: "json"
+    }).done(function() {
+      $('#populate-group input, #populate-group button').prop("disabled", false);
+      console.log("Selecting screen");
+      selectScreen();
+    }).fail(function(jqXHR, textStatus, error) {
+      $('#populate-group input, #populate-group button').prop("disabled", false);
+      console.log("Failed", jqXHR, textStatus, error);
+      names = [];
+      selectScreen();
+    });
+  };
+
+  function navigateToGroup() {
+    var newGroupName = $('#group-name').val();
+    history.pushState({}, "Group " + newGroupName, "#" + newGroupName);
+    names = [];
+    myName = undefined;
+    selectScreen();
+    return false;
+  };
+
+  function redrawMembers() {
+    $('#group-members').html('');
+    $.each(names, function (index, name) {
+      var p = document.createElement('p');
+      p.append(document.createTextNode(name));
+      $('#group-members').append(p);
+    });
+  };
+
+  function addMemberToGroup() {
+    var newMemberName = $('#member-name').val();
+    names.push(newMemberName);
+    $('#member-name').val("");
+    redrawMembers();
+  };
+
   function sendResults() {
-    console.log("Sending");
+    var preferences = [];
     $.each($('#them').find('p'), function (index, element) {
-      console.log("Them: ", $(element).text());
+      preferences.push($(element).text());
+    });
+    $.ajax({
+      url: preferenceURL(),
+      method: 'post',
+      data: JSON.stringify({me: myName, preferences: preferences}),
+      contentType: 'application/json',
+      dataType: "json"
+    }).done(function() {
+      $('div.screen').hide();
+      $('#thank-you').show();
+    }).fail(function(jqXHR, textStatus, error) {
+      $('div.screen').hide();
+      $('#error').show();
     });
   };
 
@@ -80,6 +180,40 @@
       var button = createButton(name);
       moveTo(button, 'unselected');
     }); 
+  }
+
+  function selectScreen() {
+    $('div.screen').hide();
+    if (window.location.hash == "") {
+      $('#select-group').show();
+      $('#select-group input').focus();
+      return;
+    }
+    groupName = window.location.hash.substring(1);
+    $('#display-group-name').text(groupName);
+    $('#loading').show();
+    getGroupMembers().then(function(memberNames) {
+      $('#loading').hide();
+      names = memberNames.members;
+      if (names.length == 0) {
+        $('#populate-group').show();
+        $('#populate-group input').focus();
+        return;
+      }
+      populateNames();
+      $('#enter-preferences').show();
+    });
+  }
+
+  function start() {
+    $.each([ 'select-group', 'populate-group' ], function(i,e) {
+      $('#' + e).keypress(function(event) {
+        if (event.keyCode == 13) {
+          $('#' + e + " button.default").click();
+        }
+      });
+    });
+    selectScreen();
   }
 
 </script>
