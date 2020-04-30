@@ -4,6 +4,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
 import * as express from 'express';
+import axios from 'axios';
 
 admin.initializeApp();
 
@@ -51,6 +52,82 @@ app.delete('/group/:id', (req, res) => {
     .catch(error => {
       console.log("error deleting group " + req.params.id, error);
       res.send("Error");
+    });
+});
+
+interface PreferenceRecord {
+  student_prefs: { [key: string]: string[] }[]
+};
+
+const preferencesForGroup = (groupId: string): Promise<PreferenceRecord> => {
+  return admin.firestore().collection('groups').doc(groupId).collection('preferences').get()
+    .then((snapshot) => {
+      if (snapshot.size === 0) {
+        return { "student_prefs": [] };
+      } else {
+        const preferenceHash: { [key: string]: string[] } = {};
+        const result = {
+          "student_prefs": [ preferenceHash ]
+        };
+        snapshot.forEach(function(doc) {
+          const data = doc.data();
+          const proposer = data.me as string;
+          result["student_prefs"][0][proposer] = data.preferences;
+        });
+        return result;
+      }
+    })
+};
+
+app.get('/group/:id/raw_preferences', (req, res) => {
+  preferencesForGroup(req.params.id).then(result => {
+    res.send(result);
+  })
+    .catch(error => {
+      console.log("Unable to get match result for group " + req.params.id, error);
+      res.send('error');
+    });
+});
+
+interface GroupRecord {
+  members: string[]
+};
+
+app.get('/group/:id', (req, res) => {
+  return admin.firestore().collection('groups').doc(req.params.id).get()
+    .then(doc => {
+      if (!doc.exists) {
+        res.status(200).json({});
+      } else {
+        const data = doc.data() as GroupRecord;
+        res.status(200).json(data);
+      }
+    })
+    .catch(function(error) {
+      console.log("Unable to read group " + req.params.id, error);
+      res.send("Error\n\n");
+    });
+})
+
+app.get('/group/:id/matches', (req, res) => {
+  return preferencesForGroup(req.params.id).then(result => {
+    return axios({
+        url: 'https://api.matchingtools.org/sri/demo',
+        method: 'post',
+        data: result,
+        auth: {
+          username: 'mannheim',
+          password: 'Exc3llence!'
+        }
+      })
+      .then(response => {
+        console.log("Response from matchingAPI", response.data);
+        return res.status(200).json(response.data);
+      });
+  })
+    .catch(error => {
+      console.log("Unable to get match result for group " + req.params.id, error);
+      res.send('error');
     });
 });
 
