@@ -54,10 +54,10 @@ const proposer_map = (preferences: PreferenceRecord): { [key: string]:  Proposer
 
 const extract_assignment = (state: { [key: string]:  ProposerState }): Assignment => {
   const result = <[string,string][]>[];
-  var proposers = Object.keys(state);
+  const proposers = Object.keys(state);
   while (proposers.length > 0) {
     const proposer = proposers[0];
-    if (state[proposer].acceptedProposal != undefined && state[state[proposer].acceptedProposal!].acceptedProposal == proposer) {
+    if (state[proposer].acceptedProposal !== undefined && state[state[proposer].acceptedProposal!].acceptedProposal === proposer) {
       result.push([proposer, state[proposer].acceptedProposal!]);
       proposers.splice(proposers.indexOf(state[proposer].acceptedProposal!), 1);
     } else {
@@ -69,13 +69,13 @@ const extract_assignment = (state: { [key: string]:  ProposerState }): Assignmen
 }
 
 export const not_all_matched = (state: { [key: string]:  ProposerState }): boolean => {
-  let not_all_matched = false;
+  let all_matched = true;
   Object.keys(state).forEach(name => {
-    if (state[name].acceptedProposal == undefined || state[name].preferences.length > 0) {
-      not_all_matched = true;
+    if (state[name].acceptedProposal === undefined || state[name].preferences.length > 0) {
+      all_matched = false;
     }
   });
-  return not_all_matched;
+  return !all_matched;
 }
 
 export const execute_phase_1 = (state: { [key: string]:  ProposerState }, force_accept: boolean) => {
@@ -91,27 +91,27 @@ export const execute_phase_1 = (state: { [key: string]:  ProposerState }, force_
     log("Making round of proposals");
     proposers.forEach(name => make_proposal(name, state, force_accept));
     log("Proposers: " + JSON.stringify(state, undefined, 2));
-    changed = (JSON.stringify(state) != pre_image);
+    changed = (JSON.stringify(state) !== pre_image);
     log("Changed: ", changed);
   }
   log("Phase 1 complete");
 }
 
 export const unstable = (state: { [key: string]:  ProposerState }): boolean => {
-  let unstable = false;
+  let is_unstable = false;
   Object.keys(state).forEach(name => {
-    if (state[name].preferences.length == 0) {
-      unstable = true;
+    if (state[name].preferences.length === 0) {
+      is_unstable = true;
     }
   }); 
-  log("Map unstable? ", unstable);
-  return unstable;
+  log("Map unstable? ", is_unstable);
+  return is_unstable;
 }
 
 export const minimal_stable = (state: { [key: string]:  ProposerState }): boolean => {
   let stable = true;
   Object.keys(state).forEach(name => {
-    if (state[name].preferences.length != 1) {
+    if (state[name].preferences.length !== 1) {
       stable = false;
     }
   }); 
@@ -128,7 +128,7 @@ export const calculate_next_loop_entry = (current_entry: [string,string], state:
 export const tuple_list_includes = (list: [string,string][], tuple: [string,string]): boolean => {
   let found = false;
   list.forEach(entry => {
-    if (entry[0] == tuple[0] && entry[1] == tuple[1]) {
+    if (entry[0] === tuple[0] && entry[1] === tuple[1]) {
       found = true;
     }
   });
@@ -139,7 +139,7 @@ export const tuple_list_tail = (list: [string,string][], head: [string,string]):
   const result = <[string,string][]>[];
   let copying = false;
   list.forEach(entry => {
-    if (entry[0] == head[0] && entry[1] == head[1]) {
+    if (entry[0] === head[0] && entry[1] === head[1]) {
       copying = true;
     }
     if (copying) {
@@ -166,7 +166,7 @@ export const find_loop = (state: { [key: string]:  ProposerState }): [string,str
 
 export const remove_loop = (state: { [key: string]:  ProposerState }, loop: [string,string][]) => {
   const loop_with_buffer = [loop[loop.length - 1]].concat(loop);
-  for (var i=1; i<loop_with_buffer.length; i++) {
+  for (let i=1; i<loop_with_buffer.length; i++) {
     const previous_cell = loop_with_buffer[i-1];
     const cell = loop_with_buffer[i];
     log("Removing ", cell); 
@@ -245,7 +245,7 @@ export const solve = (preferences: PreferenceRecord): Assignment => {
       assignment = bogo_solve(preferences_to_match);
     }
     log("Got assignment for " + (assignment.matching.length * 2) + " participants");
-    if (assignment.reason != undefined) {
+    if (assignment.reason !== undefined) {
       reasons.push(assignment.reason);
     }
     if (assignment.matching.length > 0) {

@@ -4,8 +4,9 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
 import * as express from 'express';
-import axios from 'axios';
 import * as cors from 'cors';
+
+import * as solver from './solver';
 
 admin.initializeApp();
 
@@ -114,19 +115,7 @@ app.get('/group/:id', (req, res) => {
 
 app.get('/group/:id/matches', (req, res) => {
   return preferencesForGroup(req.params.id).then(result => {
-    return axios({
-        url: 'https://api.matchingtools.org/sri/demo',
-        method: 'post',
-        data: result,
-        auth: {
-          username: 'mannheim',
-          password: 'Exc3llence!'
-        }
-      })
-      .then(response => {
-        console.log("Response from matchingAPI", response.data);
-        return res.status(200).json(response.data);
-      });
+    return solver.solve(result);
   })
     .catch(error => {
       console.log("Unable to get match result for group " + req.params.id, error);
