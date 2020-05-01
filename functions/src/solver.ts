@@ -88,10 +88,110 @@ export const execute_phase_1 = (state: { [key: string]:  ProposerState }) => {
   console.log("Phase 1 complete");
 }
 
+export const unstable = (state: { [key: string]:  ProposerState }): boolean => {
+  let unstable = false;
+  Object.keys(state).forEach(name => {
+    if (state[name].preferences.length == 0) {
+      unstable = true;
+    }
+  }); 
+  console.log("Map unstable? ", unstable);
+  return unstable;
+}
+
+export const minimal_stable = (state: { [key: string]:  ProposerState }): boolean => {
+  let stable = true;
+  Object.keys(state).forEach(name => {
+    if (state[name].preferences.length != 1) {
+      stable = false;
+    }
+  }); 
+  console.log("Map stable? ", stable);
+  return stable;
+}
+
+export const calculate_next_loop_entry = (current_entry: [string,string], state: { [key: string]:  ProposerState }): [string,string] => {
+  const qidash = state[current_entry[0]].preferences[1];
+  const pidash = state[qidash].preferences[state[qidash].preferences.length - 1];
+  return <[string,string]>[pidash, qidash];
+}
+
+export const tuple_list_includes = (list: [string,string][], tuple: [string,string]): boolean => {
+  let found = false;
+  list.forEach(entry => {
+    if (entry[0] == tuple[0] && entry[1] == tuple[1]) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+export const tuple_list_tail = (list: [string,string][], head: [string,string]): [string,string][] => {
+  const result = <[string,string][]>[];
+  let copying = false;
+  list.forEach(entry => {
+    if (entry[0] == head[0] && entry[1] == head[1]) {
+      copying = true;
+    }
+    if (copying) {
+      result.push(entry);
+    }
+  });
+  return result;
+}
+
+export const find_loop = (state: { [key: string]:  ProposerState }): [string,string][] => {
+  console.log("Looking for a loop");
+  const loop_start = Object.keys(state).find(name => state[name].preferences.length > 1);
+  console.log("Starting with: " + loop_start!);
+  const loop_entries = <[string,string][]>[];
+  let next_entry: [string,string] = [ loop_start!, state[loop_start!].preferences[0] ];
+  while (!tuple_list_includes(loop_entries, next_entry)) {
+    console.log("  Adding " + next_entry);
+    loop_entries.push(next_entry);
+    next_entry = calculate_next_loop_entry(next_entry, state);
+  }
+  
+  return tuple_list_tail(loop_entries, next_entry);
+}
+
+export const remove_loop = (state: { [key: string]:  ProposerState }, loop: [string,string][]) => {
+  const loop_with_buffer = [loop[loop.length - 1]].concat(loop);
+  for (var i=1; i<loop_with_buffer.length; i++) {
+    const previous_cell = loop_with_buffer[i-1];
+    const cell = loop_with_buffer[i];
+    console.log("Removing ", cell); 
+    console.log("Removing the head of " + cell[0] + "'s preferences");
+    state[cell[0]].preferences = state[cell[0]].preferences.slice(1);
+    console.log("After R1: " + JSON.stringify(state, undefined, 2));
+    console.log("Removing everything after " + previous_cell[0] + " from " + cell[1] + "'s prefernces");
+    state[cell[1]].preferences = state[cell[1]].preferences.slice(0, state[cell[1]].preferences.indexOf(previous_cell[0]) + 1);
+    console.log("After R2: " + JSON.stringify(state, undefined, 2));
+  }
+}
+
+export const clear_acceptances = (state: { [key: string]:  ProposerState }) => {
+  Object.keys(state).forEach(key => {
+    state[key].acceptedProposal = undefined;
+  });
+}
+
 export const solve = (preferences: PreferenceRecord): Assignment => {
   const map = proposer_map(preferences);
   console.log("Proposers: " + JSON.stringify(map, undefined, 2));
 
+  execute_phase_1(map);
+  while (!unstable(map) && !minimal_stable(map)) {
+    const loop = find_loop(map);
+    console.log("Found loop: " + JSON.stringify(loop));
+    if (loop.length > 0) {
+      remove_loop(map, loop);
+      console.log("Proposers: " + JSON.stringify(map, undefined, 2));
+    } else {
+      break;
+    }
+  }
+  clear_acceptances(map);
   execute_phase_1(map);
 
   return extract_assignment(map);  

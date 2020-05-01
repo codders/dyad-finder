@@ -30,7 +30,7 @@ describe("test solver api", () => {
         "5": [ "3", "1", "2", "4", "6" ],
         "6": [ "5", "1", "3", "4", "2" ]
       } ] });
-    assert.deepEqual({ matching: [ ] }, solution); 
+    assert.deepEqual({ matching: [ [1,6], [2,4], [3,5] ] }, solution); 
   });
 
 });
