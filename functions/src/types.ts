@@ -3,5 +3,7 @@ interface PreferenceRecord {
 };
 
 interface Assignment {
-  matching: [ string, string ][]
+  matching: [ string, string ][],
+  reason?: string,
+  unmatched?: string[]
 }

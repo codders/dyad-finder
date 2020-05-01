@@ -11,14 +11,25 @@ describe("test solver api", () => {
     assert.deepEqual({ matching: [ ["A", "J"] ] }, solution);
   });
 
-  it("returns empty match if there is no solution", () => {
+  it("returns a forced match if there is no stable solution", () => {
     const solution = solver.solve({ student_prefs: [ {
         A: [ "B", "C", "D" ],
         B: [ "C", "A", "D" ],
         C: [ "A", "B", "D" ],
         D: [ "A", "B", "C" ]
       } ] });
-    assert.deepEqual({ matching: [ ] }, solution);
+    assert.deepEqual({ matching: [ [ "A", "C" ], [ "B", "D" ] ], reason: "Unstable map" }, solution);
+  });
+
+  it("returns a good map with one rejected person if there are an uneven number of participants", () => {
+     const solution = solver.solve({ student_prefs: [ {
+        "1": [ "3", "2", "5", "4" ],
+        "2": [ "5", "4", "1", "3" ],
+        "3": [ "2", "4", "1", "5" ],
+        "4": [ "3", "1", "2", "5" ],
+        "5": [ "4", "1", "3", "2" ]
+      } ] });
+    assert.deepEqual({ matching: [ [ "3", "4" ], [ "1", "5" ] ], unmatched: [ "2" ] }, solution); 
   });
 
   it("returns good stable match if there is one", () => {
