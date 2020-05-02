@@ -35,7 +35,7 @@ get '/group/abc/raw_preferences'
 
 # get matches
 # Currently not working
-## get '/group/abc/matches'
+get '/group/abc/matches'
 
 # delete group
 delete '/group/abc'

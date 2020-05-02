@@ -187,12 +187,13 @@ export const clear_acceptances = (state: { [key: string]:  ProposerState }) => {
 
 export const solve_for_stable = (preferences: PreferenceRecord): Assignment => {
   const map = JSON.parse(JSON.stringify(proposer_map(preferences)));
-  log("Proposers: " + JSON.stringify(map, undefined, 2));
+  log("Input Table: " + JSON.stringify(map, undefined, 2));
 
   execute_phase_1(map, false);
   if (unstable(map)) {
     return { matching: [], reason: "Unstable map" };
   }
+  log("Phase 1 Table: " + JSON.stringify(map, undefined, 2));
   while (!unstable(map) && !minimal_stable(map)) {
     const loop = find_loop(map);
     log("Found loop: " + JSON.stringify(loop));
@@ -229,13 +230,32 @@ export const filter_matches = (preferences: PreferenceRecord, matches: [string,s
   return { student_prefs: [ state ] };
 }
 
+export const sanity_check_and_fixup_lists = (preferences: PreferenceRecord): PreferenceRecord => {
+  const map = preferences.student_prefs[0];
+  const all_keys = Object.keys(map);
+  all_keys.forEach(student => {
+    let preference = map[student];
+    preference = preference.filter(selection => all_keys.includes(selection));
+    const key_copy = Object.assign([], all_keys);
+    key_copy.splice(key_copy.indexOf(student, 0), 1);
+    preference.forEach(selection => {
+      const index = key_copy.indexOf(selection, 0);
+      if (index > -1) {
+        key_copy.splice(index, 1);
+      }
+    });
+    map[student] = preference.concat(key_copy);
+  });
+  return preferences;
+}
+
 export const solve = (preferences: PreferenceRecord): Assignment => {
   log_buffer = <string[]>[];
   let matches = <[string,string][]>[];  
   const reasons = [];
   let bogo_match = false;
-  let preferences_to_match = preferences;
-  log("In solver: " + Object.keys(preferences.student_prefs[0]).length);
+  let preferences_to_match = sanity_check_and_fixup_lists(preferences);
+  console.log("Starting solver with " + Object.keys(preferences.student_prefs[0]).length + " preferences");
   while (matches.length < Math.floor(Object.keys(preferences.student_prefs[0]).length/2)) {
     log("Attempting to find a solution");
     let assignment: Assignment;
@@ -244,13 +264,15 @@ export const solve = (preferences: PreferenceRecord): Assignment => {
     } else {
       assignment = bogo_solve(preferences_to_match);
     }
-    log("Got assignment for " + (assignment.matching.length * 2) + " participants");
+    console.log("Got assignment for " + (assignment.matching.length * 2) + " participants");
     if (assignment.reason !== undefined) {
       reasons.push(assignment.reason);
     }
     if (assignment.matching.length > 0) {
       matches = matches.concat(assignment.matching);
+      console.log("Got matches", matches);
       if (assignment.matching.length < Math.floor(Object.keys(preferences.student_prefs[0]).length/2)) {
+        console.log("Filtering preferences");
         preferences_to_match = filter_matches(preferences_to_match, matches);
       }
     } else {

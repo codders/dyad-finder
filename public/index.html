@@ -46,15 +46,39 @@
 <script>
 
   var myName;
-  var groupName;
 
   var BASE_URL = "https://europe-west1-dyad-finder.cloudfunctions.net/dyad";
 
   var names = [
   ];
 
+  function getPath() {
+    if (window.location.protocol == "file:") {
+      if (window.location.hash != "") {
+        return window.location.hash.substring(1);
+      }
+      return window.location.hash;
+    } else {
+      return window.location.pathname.substring(1);
+    }
+  };
+
+  function setPath(newGroupName) {
+    var newPath;
+    if (window.location.protocol == 'https:') {
+      newPath = newGroupName
+    } else {
+      newPath = "#" + newGroupName;
+    }
+    history.pushState({}, "Group " + newGroupName, newPath);
+  };
+
+  function getGroupName() {
+    return getPath();
+  };
+
   function groupURL() {
-    return BASE_URL + "/group/" + groupName;
+    return BASE_URL + "/group/" + getGroupName();
   };
 
   function preferenceURL() {
@@ -92,7 +116,7 @@
 
   function navigateToGroup() {
     var newGroupName = $('#group-name').val();
-    history.pushState({}, "Group " + newGroupName, "#" + newGroupName);
+    setPath(newGroupName);
     names = [];
     myName = undefined;
     selectScreen();
@@ -184,13 +208,12 @@
 
   function selectScreen() {
     $('div.screen').hide();
-    if (window.location.hash == "") {
+    if (getPath() == "") {
       $('#select-group').show();
       $('#select-group input').focus();
       return;
     }
-    groupName = window.location.hash.substring(1);
-    $('#display-group-name').text(groupName);
+    $('#display-group-name').text(getGroupName());
     $('#loading').show();
     getGroupMembers().then(function(memberNames) {
       $('#loading').hide();

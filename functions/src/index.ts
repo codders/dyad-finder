@@ -115,7 +115,7 @@ app.get('/group/:id', (req, res) => {
 
 app.get('/group/:id/matches', (req, res) => {
   return preferencesForGroup(req.params.id).then(result => {
-    return solver.solve(result);
+    res.status(200).send(solver.solve(result));
   })
     .catch(error => {
       console.log("Unable to get match result for group " + req.params.id, error);

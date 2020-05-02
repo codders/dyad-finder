@@ -44,4 +44,14 @@ describe("test solver api", () => {
     assert.deepEqual({ matching: [ [1,6], [2,4], [3,5] ] }, solution); 
   });
 
+  it("returns a match for error case #1", () => {
+    const solution = solver.solve({ student_prefs: [ {
+        "Arthur": ["Jenny", "Luca"],
+        "Jenny":  ["Lukas", "Luca"],
+        "Luca":   ["Arthur", "Jenny", "Lukas"],
+        "Lukas":  ["Luca"]
+    } ] });
+    assert.deepEqual({ matching: [ [ 'Arthur', 'Luca' ], [ 'Jenny', 'Lukas' ] ] }, solution);
+  });
+
 });
