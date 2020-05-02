@@ -329,19 +329,19 @@
   function setPath(newGroupName) {
     var newPath;
     if (window.location.protocol == 'https:') {
-      newPath = newGroupName
+      newPath = encodeURIComponent(newGroupName);
     } else {
-      newPath = "#" + newGroupName;
+      newPath = "#" + encodeURIComponent(newGroupName);
     }
     history.pushState({}, "Group " + newGroupName, newPath);
   };
 
   function getGroupName() {
-    return getPath();
+    return decodeURIComponent(getPath());
   };
 
   function groupURL() {
-    return BASE_URL + "/group/" + getGroupName();
+    return BASE_URL + "/group/" + encodeURIComponent(getGroupName());
   };
 
   function preferenceURL() {
