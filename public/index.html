@@ -3,15 +3,101 @@
 <head>
   <title>Dyad Finder</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet'>
+  <style>
+    * {
+    }
+
+    body {
+      background-image: linear-gradient(-90deg,#1251AE 0,#0074FF 50%,#1251AE 100%);
+      font-family: 'Roboto';
+      font-size: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 500;
+    }
+
+    div.screen {
+    }
+
+    .headline {
+      text-align: center;
+    }
+
+    .start {
+      background-color: white;
+      background-image: none;
+      opacity: 1;
+      padding: 25px 30px;
+      margin: 2rem;
+      width: 680px;
+      display: flex;
+      align-items: center;
+    }
+
+    .start-input-container {
+      border-width: 0 0 2px;
+      border-style: solid;
+      border-image: linear-gradient(to right, #dee1e6, #fff) 1;
+      width: 100%;
+      align-items: center;
+    }
+
+    .start-input-container input {
+      border: none;
+      display: inline-block;
+      width: 100%;
+      font-size: 14px; 
+    }
+
+    .start-input-container input:focus {
+      outline: none;
+    }
+
+    .start-title {
+      font-size: 18px;
+      font-weight: 700;
+      padding-bottom: 5px;
+    }
+
+    .start-button {
+      width: 51px;
+      height: 35px;
+      font-size: 14px;
+      background: #0074e0;
+      border-radius: 4px;
+      color: white;
+      text-align: center;
+      line-height: 35px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+  </style>
 </head>
 <body onload="start()">
   <div id="loading" style="display: none" class="screen">
     <p>Loading...</p>
   </div>
   <div id="select-group" style="display: none" class="screen">
-    <p>Select Group</p>
-    <input type="text" id="group-name"></input>
-    <button type="submit" class="default" onclick="navigateToGroup()">Select Group</button>
+    <div class="headline">
+      <h1>Dyad Finder</h1>
+    </div>
+    <div class="start">
+      <div class="start-input-container">
+        <div class="start-title">
+          Select Group
+        </div>
+        <input type="text" id="group-name"></input>
+      </div>
+      <div class="start-button default" onclick="navigateToGroup()">GO</div>
+    </div>
   </div>
   <div id="populate-group" style="display:none" class="screen">
     <p>Populate Group <span id="display-group-name"></span></p>
@@ -232,10 +318,11 @@
     $.each([ 'select-group', 'populate-group' ], function(i,e) {
       $('#' + e).keypress(function(event) {
         if (event.keyCode == 13) {
-          $('#' + e + " button.default").click();
+          $('#' + e + " .default").click();
         }
       });
     });
+    window.onhashchange = selectScreen;
     selectScreen();
   }
 
