@@ -72,7 +72,7 @@
       outline: none;
     }
 
-    .start-title {
+    div .title {
       font-size: 18px;
       font-weight: 700;
       padding-bottom: 5px;
@@ -90,6 +90,89 @@
       cursor: pointer;
       vertical-align: middle;
     }
+
+
+    /**
+     * Populate Group screen
+     */
+    #populate-group .title {
+      color: white;
+    }
+
+    #group-members {
+      background-color: white;
+      opacity: 0.7;
+      width: 680px;
+      min-height: 100px;
+      padding: 0.1rem;
+      border-radius: 10px;
+    }
+
+    #group-members .member {
+      margin: 0.5rem;
+      background-color: #e2e2e2;
+      padding: 0.25rem;
+      border-radius: 10px;
+    }
+
+    #populate-group .input-container {
+      width: 100%;
+    }
+
+    #populate-group .data-entry {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      opacity: 1;
+      padding: 0.5rem;
+      margin: 0.5rem 0; 
+      border-radius: 10px;
+    }
+
+    #populate-group input {
+      border-width: 0 0 2px;
+      border-style: solid;
+      border-image: linear-gradient(to right, #dee1e6, #fff) 1;
+      width: 100%;
+    }
+
+    #populate-group input:focus {
+      outline: none;
+    }
+
+   .add-button {
+      width: 51px;
+      height: 35px;
+      font-size: 14px;
+      background: #0074e0;
+      border-radius: 4px;
+      color: white;
+      text-align: center;
+      line-height: 35px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    .save-group-button {
+      height: 35px;
+      background: #003f80;
+      font-size: 20px;
+      text-align: center;
+      cursor: pointer;
+      vertical-align: middle;
+      line-height: 35px;
+      border-radius: 4px;
+      width: 50%;
+      color: white;
+    }
+
+    .button-holder {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
 
   </style>
 </head>
@@ -174,7 +257,7 @@
     </div>
     <div class="start">
       <div class="start-input-container">
-        <div class="start-title">
+        <div class="title">
           Select Group
         </div>
         <input type="text" id="group-name"></input>
@@ -183,13 +266,24 @@
     </div>
   </div>
   <div id="populate-group" style="display:none" class="screen">
-    <p>Populate Group <span id="display-group-name"></span></p>
+    <div class="headline">
+      <h1>Populate Group <span id="display-group-name"></span></h1>
+    </div>
+    <div class="title">
+      Members
+    </div>
     <div id="group-members">
     </div>
-    <input type="text" id="member-name"></input>
-    <button type="submit" class="default" onclick="addMemberToGroup()">Add Member</button>
-    <div>
-      <button type="submit" onclick="updateGroup()">Update Group</button>
+    <div class="data-entry">
+      <div class="input-container">
+        <input type="text" id="member-name"></input>
+      </div>
+      <div class="add-button default" onclick="addMemberToGroup()">ADD</div>
+    </div>
+    <div class="button-holder">
+      <div onclick="updateGroup()" class="save-group-button">
+        SAVE GROUP
+      </div>
     </div>
   </div>
   <div id="enter-preferences" style="display: none" class="screen">
@@ -264,7 +358,8 @@
   };
 
   function updateGroup() {
-    $('#populate-group input, #populate-group button').prop("disabled", true);
+    $('div.screen').hide();
+    $('#loading').show();
     $.ajax({
       url: groupURL(),
       method: 'post',
@@ -295,9 +390,10 @@
   function redrawMembers() {
     $('#group-members').html('');
     $.each(names, function (index, name) {
-      var p = document.createElement('p');
-      p.append(document.createTextNode(name));
-      $('#group-members').append(p);
+      var div = document.createElement('div');
+      $(div).addClass("member");
+      div.append(document.createTextNode(name));
+      $('#group-members').append(div);
     });
   };
 
@@ -389,7 +485,7 @@
       names = memberNames.members;
       if (names.length == 0) {
         $('#populate-group').show();
-        $('#populate-group input').focus();
+        $('#member-name').focus();
         return;
       }
       populateNames();
