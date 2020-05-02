@@ -153,7 +153,7 @@
       vertical-align: middle;
     }
 
-    .save-group-button {
+    .save-button {
       height: 35px;
       background: #003f80;
       font-size: 20px;
@@ -166,6 +166,11 @@
       color: white;
     }
 
+    .save-button.disabled {
+      background: #aaaaaa;
+      cursor: not-allowed;
+    }
+
     .button-holder {
       width: 100%;
       display: flex;
@@ -173,6 +178,73 @@
       align-items: center;
     }
 
+    /**
+     * Enter preferences
+     */
+    #enter-preferences {
+      width: 680px;
+    }
+
+    #enter-preferences div.preference-selector {
+      background: white;
+      opacity: 0.7;
+      padding: 1rem;
+    }
+
+    #enter-preferences div.name-holder {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    div.person {
+      height: 35px;
+      line-height: 35px;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 1rem;
+      margin: 0.25rem;
+      opacity: 1;
+      color: black;
+    }
+
+    div.name-holder {
+      border-radius: 10px;
+      margin: 0.25rem;
+      padding: 0.5rem;
+    }
+
+    #them {
+      background: green;
+      min-height: 75px;
+    }
+
+    #unselected {
+      background: #0074ff;
+      min-height: 75px;
+    }
+
+    div.them {
+      background: #319872;
+    }
+
+    div.unselected {
+      background: #00c4ff;
+    }
+
+    /**
+     * Summary screen
+     */
+    #thank-you .next-steps {
+      width: 680px;
+      background: white;
+      opacity: 0.7;
+      padding: 1rem;
+    }
+
+    #thank-you .button-holder {
+      margin: 1rem;
+    }
 
   </style>
 </head>
@@ -281,29 +353,57 @@
       <div class="add-button default" onclick="addMemberToGroup()">ADD</div>
     </div>
     <div class="button-holder">
-      <div onclick="updateGroup()" class="save-group-button">
+      <div onclick="updateGroup()" class="save-button">
         SAVE GROUP
       </div>
     </div>
   </div>
   <div id="enter-preferences" style="display: none" class="screen">
-    <div id="me">
-      <p>Select your name</p>
+    <div class="headline">
+      <h1 class="prompt">Select your Name</h1>
     </div>
-    <hr/>
-    <div id="them">
+    <div class="preference-selector">
+      <div id="me">
+      </div>
+      <div class="title maybe-show-them" style="display: none">
+        Preferred Dyad partners
+      </div>
+      <div id="them" class="name-holder maybe-show-them" style="display:none">
+      </div>
+      <div class="title">
+        Group members
+      </div>
+      <div id="unselected" class="name-holder">
+      </div>
+      <div class="button-holder">
+        <div onclick="sendResults()" class="save-button disabled">
+          SAVE PREFERENCES 
+        </div>
+      </div>
     </div>
-    <hr/>
-    <div id="unselected">
-    </div>
-    <hr/>
-    <p onclick="sendResults()">Submit</p>
   </div>
   <div id="thank-you" style="display:none" class="screen">
-    <p>Thank you!</p>
+    <div class="headline">
+      <h1 class="prompt">Preferences submitted!</h1>
+    </div>
+    <div class="next-steps">
+      <div class="button-holder">
+        <div onclick="selectScreen()" class="save-button">
+          ENTER MORE PREFERENCES
+        </div>
+      </div>
+      <div class="button-holder">
+        <div onclick="showMatches()" class="save-button">
+          SHOW MATCHES
+        </div>
+      </div>
+    </div>
+
   </div>
   <div id="error" style="display:none" class="screen">
-    <p>Error - please try again</p>
+    <div class="headline">
+      <h1 class="prompt">Error - please try again</h1>
+    </div>
   </div>
 </body>
 <script>
@@ -404,11 +504,25 @@
     redrawMembers();
   };
 
+  function resetPreferenceScreen() {
+    $('#enter-preferences').find('h1.prompt').text('Select your Name');
+    myName = null;
+    $('#them').empty();
+    $('#unselected').empty();
+    $('#enter-preferences').find('.maybe-show-them').hide();
+    $('div.preference-selector').find('div.save-button').addClass('disabled');
+  }
+
   function sendResults() {
+    if (myName == null) {
+      return;
+    }
     var preferences = [];
-    $.each($('#them').find('p'), function (index, element) {
+    $.each($('#them').find('div'), function (index, element) {
       preferences.push($(element).text());
     });
+    $('div.screen').hide();
+    $('#loading').show();
     $.ajax({
       url: preferenceURL(),
       method: 'post',
@@ -417,9 +531,11 @@
       dataType: "json"
     }).done(function() {
       $('div.screen').hide();
+      resetPreferenceScreen();
       $('#thank-you').show();
     }).fail(function(jqXHR, textStatus, error) {
       $('div.screen').hide();
+      resetPreferenceScreen();
       $('#error').show();
     });
   };
@@ -427,8 +543,11 @@
   function switchPosition(element) {
     console.log("Switching element from " + $(element).data('location'));
     if (myName == undefined) {
-      myName = $(element).find('p').text();
-      moveTo(element, 'me');
+      myName = $(element).text();
+      $(element).hide();
+      $('#enter-preferences').find('h1.prompt').text('Select partners for ' + myName);
+      $('div.preference-selector').find('div.save-button').removeClass('disabled');
+      $('div.preference-selector').find('.maybe-show-them').show();
       return;
     }
     if ($(element).data('location') == "me") {
@@ -446,18 +565,19 @@
   function moveTo(element, location) {
     if ($(element).data('location') != null) {
       var currentLocation = $(element).data('location');
+      $(element).removeClass(currentLocation);
       $(currentLocation).remove(element);
     }
     $("#" + location).append(element);
+    $(element).addClass(location);
     $(element).data('location', location);
   };
 
   function createButton(name) {
     var button = document.createElement('div');
-    var label = document.createElement('p');
-    label.append(name);
-    button.append(label);
-    $(button).attr("class", "person");
+    button.append(name);
+    $(button).addClass("person");
+    $(button).addClass("unselected");
     $(button).click(function() { switchPosition(button); });
     return button;
   };
