@@ -246,6 +246,24 @@
       margin: 1rem;
     }
 
+    /**
+     * Result screen
+     */
+    #result .matches {
+      width: 680px;
+      background: white;
+      opacity: 0.7;
+      padding: 1rem;
+    }
+
+    #result .matches .match {
+      margin: 0.5rem;
+      background-color: #e2e2e2;
+      padding: 0.25rem;
+      border-radius: 10px;
+      text-align: center;
+    }
+
   </style>
 </head>
 <body onload="start()">
@@ -398,8 +416,15 @@
         </div>
       </div>
     </div>
-
   </div>
+  <div id="result" style="display:none" class="screen">
+    <div class="headline">
+      <h1 class="prompt">Matching Result</h1>
+    </div>
+    <div class="matches">
+    </div>
+  </div>
+
   <div id="error" style="display:none" class="screen">
     <div class="headline">
       <h1 class="prompt">Error - please try again</h1>
@@ -426,22 +451,34 @@
     }
   };
 
-  function setPath(newGroupName) {
+  function setPath(groupName, action) {
     var newPath;
-    if (window.location.protocol == 'https:') {
-      newPath = encodeURIComponent(newGroupName);
-    } else {
-      newPath = "#" + encodeURIComponent(newGroupName);
+    var pathPart = encodeURIComponent(groupName);
+    if (action != undefined) {
+      pathPart = pathPart + "/" + action;
     }
-    history.pushState({}, "Group " + newGroupName, newPath);
+    if (window.location.protocol == 'https:') {
+      newPath = pathPart;
+    } else {
+      newPath = "#" + pathPart;
+    }
+    history.pushState({}, "Group " + groupName, newPath);
+  };
+
+  function getPageAction() {
+    return getPath().split("/")[1];
   };
 
   function getGroupName() {
-    return decodeURIComponent(getPath());
+    return decodeURIComponent(getPath().split("/")[0]);
   };
 
   function groupURL() {
     return BASE_URL + "/group/" + encodeURIComponent(getGroupName());
+  };
+
+  function groupResultURL() {
+    return groupURL() + "/matches";
   };
 
   function preferenceURL() {
@@ -451,6 +488,15 @@
   function getGroupMembers() {
     return $.ajax({
       url: groupURL(),
+      dataType: 'json'
+    }).then(function(data, textStatus, jqXHR) {
+      return data;
+    });
+  };
+
+  function getMatchingResult() {
+    return $.ajax({
+      url: groupResultURL(),
       dataType: 'json'
     }).then(function(data, textStatus, jqXHR) {
       return data;
@@ -582,6 +628,13 @@
     return button;
   };
 
+  function createMatch(match) {
+    var div = document.createElement('div');
+    div.append(match[0] + " <-> " + match[1]);
+    $(div).addClass("match");
+    return div;
+  };
+
   function populateNames() {
     console.log("Populating");
     $.each(names, function(index, name) {
@@ -589,7 +642,12 @@
       var button = createButton(name);
       moveTo(button, 'unselected');
     }); 
-  }
+  };
+
+  function showMatches() {
+    setPath(getGroupName(), 'result');
+    selectScreen();
+  };
 
   function selectScreen() {
     $('div.screen').hide();
@@ -598,19 +656,36 @@
       $('#select-group input').focus();
       return;
     }
-    $('#display-group-name').text(getGroupName());
-    $('#loading').show();
-    getGroupMembers().then(function(memberNames) {
-      $('#loading').hide();
-      names = memberNames.members;
-      if (names.length == 0) {
-        $('#populate-group').show();
-        $('#member-name').focus();
-        return;
-      }
-      populateNames();
-      $('#enter-preferences').show();
-    });
+    if (getPageAction() == undefined) {
+      $('#loading').show();
+      getGroupMembers().then(function(memberNames) {
+        $('#loading').hide();
+        names = memberNames.members;
+        if (names.length == 0) {
+          $('#display-group-name').text(getGroupName());
+          $('#populate-group').show();
+          $('#member-name').focus();
+          return;
+        }
+        populateNames();
+        $('#enter-preferences').show();
+      });
+      return;
+    }
+    switch(getPageAction()) {
+      case "result":
+        $('#loading').show();
+        $('#result div.matches').empty();
+        getMatchingResult().then(function(result) {
+          $('#loading').hide();
+          console.log("Result", result);
+          $('#result').show();
+          $.each(result.matching, function(i, match) {
+            $('#result div.matches').append(createMatch(match));
+          }); 
+        }); 
+        break;
+    }
   }
 
   function start() {
