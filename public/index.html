@@ -99,7 +99,7 @@
       color: white;
     }
 
-    #group-members {
+    .group-members {
       background-color: white;
       opacity: 0.7;
       width: 680px;
@@ -108,7 +108,7 @@
       border-radius: 10px;
     }
 
-    #group-members .member {
+    .group-members .member {
       margin: 0.5rem;
       background-color: #e2e2e2;
       padding: 0.25rem;
@@ -264,6 +264,25 @@
       text-align: center;
     }
 
+    /*
+     * Overview screen
+     */
+    #group-status .url-list {
+      background-color: white;
+      opacity: 0.7;
+      width: 680px;
+      min-height: 100px;
+      padding: 0.1rem;
+      border-radius: 10px;
+    }
+
+    #group-status .url-list .url {
+      margin: 0.5rem;
+      background-color: #e2e2e2;
+      padding: 0.25rem;
+      border-radius: 10px;
+    }
+
   </style>
 </head>
 <body onload="start()">
@@ -357,12 +376,12 @@
   </div>
   <div id="populate-group" style="display:none" class="screen">
     <div class="headline">
-      <h1>Populate Group <span id="display-group-name"></span></h1>
+      <h1>Populate Group <span class="display-group-name"></span></h1>
     </div>
     <div class="title">
       Members
     </div>
-    <div id="group-members">
+    <div class="group-members">
     </div>
     <div class="data-entry">
       <div class="input-container">
@@ -424,6 +443,29 @@
     <div class="matches">
     </div>
   </div>
+  <div id="group-status" style="display:none" class="screen">
+    <div class="headline">
+      <h1><span class="display-group-name"></span> Group Overview</h1>
+    </div>
+    <div class="title">
+      Group URLs
+    </div>
+    <div class="url-list">
+      <div class="url">
+        Survey Link:<br/>
+        <span class="survey_url"></span>
+      </div>
+      <div class="url">
+        Result Link:<br/>
+        <span class="result_url"></span>
+      </div>
+    </div>
+    <div class="title">
+      Members
+    </div>
+    <div class="group-members">
+    </div>
+  </div>
 
   <div id="error" style="display:none" class="screen">
     <div class="headline">
@@ -439,6 +481,21 @@
 
   var names = [
   ];
+
+  var loaded_group = false;
+
+  function getSiteURL(action) {
+    var baseURL;
+    if (window.location.protocol == "file:") {
+      baseURL = "file://" + window.location.pathname + "#" + getGroupName();
+    } else {
+      baseURL = window.location.protocol + "//" + window.location.hostname + "/" + getGroupName();
+    }
+    if (action != undefined) {
+      baseURL += "/" + action;
+    }
+    return baseURL;
+  }
 
   function getPath() {
     if (window.location.protocol == "file:") {
@@ -463,6 +520,7 @@
       newPath = "#" + pathPart;
     }
     history.pushState({}, "Group " + groupName, newPath);
+    selectScreen();
   };
 
   function getPageAction() {
@@ -514,8 +572,7 @@
       dataType: "json"
     }).done(function() {
       $('#populate-group input, #populate-group button').prop("disabled", false);
-      console.log("Selecting screen");
-      selectScreen();
+      setPath(getGroupName(), "status");
     }).fail(function(jqXHR, textStatus, error) {
       $('#populate-group input, #populate-group button').prop("disabled", false);
       console.log("Failed", jqXHR, textStatus, error);
@@ -526,28 +583,29 @@
 
   function navigateToGroup() {
     var newGroupName = $('#group-name').val();
-    setPath(newGroupName);
     names = [];
     myName = undefined;
-    selectScreen();
+    setPath(newGroupName);
     return false;
   };
 
   function redrawMembers() {
-    $('#group-members').html('');
+    $('.group-members').html('');
     $.each(names, function (index, name) {
       var div = document.createElement('div');
       $(div).addClass("member");
       div.append(document.createTextNode(name));
-      $('#group-members').append(div);
+      $('.group-members').append(div);
     });
   };
 
   function addMemberToGroup() {
     var newMemberName = $('#member-name').val();
-    names.push(newMemberName);
-    $('#member-name').val("");
-    redrawMembers();
+    if (!names.includes(newMemberName)) {
+      names.push(newMemberName);
+      $('#member-name').val("");
+      redrawMembers();
+    }
   };
 
   function resetPreferenceScreen() {
@@ -635,6 +693,15 @@
     return div;
   };
 
+  function createLink(selector, url) {
+    $(selector).empty();
+    var a = document.createElement('a');
+    $(a).attr("href", url);
+    $(a).text(url);
+    $(selector).append(a);
+    return a;
+  };
+
   function populateNames() {
     console.log("Populating");
     $.each(names, function(index, name) {
@@ -646,30 +713,44 @@
 
   function showMatches() {
     setPath(getGroupName(), 'result');
-    selectScreen();
   };
 
   function selectScreen() {
     $('div.screen').hide();
+
+    /* Show group select if no group selected */
     if (getPath() == "") {
+      loaded_group = false;
+      names = [];
       $('#select-group').show();
       $('#select-group input').focus();
       return;
     }
-    if (getPageAction() == undefined) {
+
+    $('.display-group-name').text(getGroupName());
+
+    /* Ensure group data is loaded */
+    if (!loaded_group && getPageAction() != "result") {
       $('#loading').show();
       getGroupMembers().then(function(memberNames) {
         $('#loading').hide();
+        loaded_group = true;
         names = memberNames.members;
-        if (names.length == 0) {
-          $('#display-group-name').text(getGroupName());
-          $('#populate-group').show();
-          $('#member-name').focus();
-          return;
-        }
-        populateNames();
-        $('#enter-preferences').show();
+        selectScreen();
       });
+      return;
+    }
+
+    /* Go to group setup page if no action and no members are defined */
+    if (getPageAction() == undefined) {
+      if (names.length == 0) {
+        setPath(getGroupName(), "setup");
+        return;
+      }
+
+      /* Enter preference data */
+      populateNames();
+      $('#enter-preferences').show();
       return;
     }
     switch(getPageAction()) {
@@ -684,6 +765,17 @@
             $('#result div.matches').append(createMatch(match));
           }); 
         }); 
+        break;
+      case "setup":
+        $('#populate-group').show();
+        redrawMembers();
+        $('#member-name').focus();
+        break; 
+      case "status":
+        $('#group-status').show();
+        createLink(".survey_url", getSiteURL());
+        createLink(".result_url", getSiteURL("result"));
+        redrawMembers();
         break;
     }
   }
