@@ -371,7 +371,7 @@
     <div class="start">
       <div class="start-input-container">
         <div class="title">
-          Select Group
+          Create Group
         </div>
         <input type="text" id="group-name"></input>
       </div>
@@ -431,11 +431,6 @@
       <div class="button-holder">
         <div onclick="selectScreen()" class="save-button">
           ENTER MORE PREFERENCES
-        </div>
-      </div>
-      <div class="button-holder">
-        <div onclick="showMatches()" class="save-button">
-          SHOW MATCHES
         </div>
       </div>
     </div>
@@ -528,7 +523,7 @@
       pathPart = pathPart + "/" + action;
     }
     if (window.location.protocol == 'https:') {
-      newPath = pathPart;
+      newPath = "/" + pathPart;
     } else {
       newPath = "#" + pathPart;
     }
