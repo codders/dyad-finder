@@ -283,6 +283,10 @@
       border-radius: 10px;
     }
 
+    #group-status .group-members .member.have_preference {
+      background-color: green;
+    }
+
   </style>
 </head>
 <body onload="start()">
@@ -483,6 +487,12 @@
   ];
 
   var loaded_group = false;
+  var loadedGroupName;
+
+  var expressed_preferences = [];
+
+  var loaded_status = false;
+  var update_timer;
 
   function getSiteURL(action) {
     var baseURL;
@@ -497,14 +507,17 @@
     return baseURL;
   }
 
-  function getPath() {
-    if (window.location.protocol == "file:") {
-      if (window.location.hash != "") {
-        return window.location.hash.substring(1);
+  function getPath(location) {
+    if (location == undefined) {
+      location = window.location;
+    }
+    if (location.protocol == "file:") {
+      if (location.hash != "") {
+        return location.hash.substring(1);
       }
-      return window.location.hash;
+      return location.hash;
     } else {
-      return window.location.pathname.substring(1);
+      return location.pathname.substring(1);
     }
   };
 
@@ -539,6 +552,10 @@
     return groupURL() + "/matches";
   };
 
+  function groupPreferencesURL() {
+    return groupURL() + "/preferences";
+  };
+
   function preferenceURL() {
     return groupURL() + "/preference"; 
   };
@@ -558,6 +575,15 @@
       dataType: 'json'
     }).then(function(data, textStatus, jqXHR) {
       return data;
+    });
+  };
+
+  function getPreferenceStatus() {
+    return $.ajax({
+      url: groupPreferencesURL(),
+      dataType: 'json'
+    }).then(function(data, textStatus, jqXHR) {
+      return data.preferences;
     });
   };
 
@@ -581,10 +607,18 @@
     });
   };
 
-  function navigateToGroup() {
-    var newGroupName = $('#group-name').val();
+  function clearGroupState() {
     names = [];
     myName = undefined;
+    loaded_group = false;
+    loadedGroupName = undefined;
+    loaded_status = false;
+    expressed_preferences = []; 
+  };
+
+  function navigateToGroup() {
+    var newGroupName = $('#group-name').val();
+    clearGroupState();
     setPath(newGroupName);
     return false;
   };
@@ -594,6 +628,9 @@
     $.each(names, function (index, name) {
       var div = document.createElement('div');
       $(div).addClass("member");
+      if (expressed_preferences.includes(name)) {
+        $(div).addClass("have_preference");
+      }
       div.append(document.createTextNode(name));
       $('.group-members').append(div);
     });
@@ -697,6 +734,7 @@
     $(selector).empty();
     var a = document.createElement('a');
     $(a).attr("href", url);
+    $(a).attr("target", "_blank");
     $(a).text(url);
     $(selector).append(a);
     return a;
@@ -713,6 +751,19 @@
 
   function showMatches() {
     setPath(getGroupName(), 'result');
+  };
+
+  function startPreferencePolling() {
+    update_timer = window.setTimeout(function() {
+      update_timer = undefined;
+      getPreferenceStatus().then(function(preferences) {
+        expressed_preferences = preferences;
+        redrawMembers();
+        if (getPageAction() == "status") {
+          startPreferencePolling();
+        }
+      });  
+    }, 5000);
   };
 
   function selectScreen() {
@@ -735,7 +786,20 @@
       getGroupMembers().then(function(memberNames) {
         $('#loading').hide();
         loaded_group = true;
+        loadedGroupName = getGroupName();
         names = memberNames.members;
+        selectScreen();
+      });
+      return;
+    }
+
+    /* Ensure status data is loaded if required */
+    if (!loaded_status && getPageAction() == "status") {
+      $('#loading').show();
+      getPreferenceStatus().then(function(preferences) {
+        $('#loading').hide();
+        loaded_status = true;
+        expressed_preferences = preferences;
         selectScreen();
       });
       return;
@@ -776,7 +840,8 @@
         createLink(".survey_url", getSiteURL());
         createLink(".result_url", getSiteURL("result"));
         redrawMembers();
-        break;
+        startPreferencePolling();
+       break;
     }
   }
 
@@ -788,7 +853,17 @@
         }
       });
     });
-    window.onhashchange = selectScreen;
+    window.onhashchange = function() {
+      console.log("Hash change - new group: " + getGroupName() + " old: " + loadedGroupName);
+      if (update_timer != undefined) {
+        console.log("Clearing update timer");
+        window.clearTimeout(updateTimer);
+      }
+      if (getGroupName() != loadedGroupName) {
+        clearGroupState();
+      }
+      selectScreen();
+    } 
     selectScreen();
   }
 
