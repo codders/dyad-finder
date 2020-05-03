@@ -67,7 +67,7 @@ const preferencesForGroup = (groupId: string): Promise<PreferenceRecord> => {
   return admin.firestore().collection('groups').doc(groupId).collection('preferences').get()
     .then((snapshot) => {
       if (snapshot.size === 0) {
-        return { "student_prefs": [] };
+        return { "student_prefs": [ {} ] };
       } else {
         const preferenceHash: { [key: string]: string[] } = {};
         const result = {
@@ -82,6 +82,16 @@ const preferencesForGroup = (groupId: string): Promise<PreferenceRecord> => {
       }
     })
 };
+
+app.get('/group/:id/preferences', (req, res) => {
+  preferencesForGroup(req.params.id).then(result => {
+    res.status(200).json({ "preferences": Object.keys(result.student_prefs[0]) });
+  })
+    .catch(error => {
+      console.log("Unable to get preferences for group " + req.params.id, error);
+      res.status(500).json({ error: error.message });
+    });
+});
 
 app.get('/group/:id/raw_preferences', (req, res) => {
   preferencesForGroup(req.params.id).then(result => {
