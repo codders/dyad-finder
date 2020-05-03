@@ -401,20 +401,20 @@
   </div>
   <div id="enter-preferences" style="display: none" class="screen">
     <div class="headline">
-      <h1 class="prompt">Select your Name</h1>
+      <h1 class="prompt">Submit your preferences</h1>
     </div>
     <div class="preference-selector">
-      <div id="me">
-      </div>
-      <div class="title maybe-show-them" style="display: none">
-        Preferred Dyad partners
-      </div>
-      <div id="them" class="name-holder maybe-show-them" style="display:none">
-      </div>
-      <div class="title">
+      <div class="title prompt">
         Group members
       </div>
       <div id="unselected" class="name-holder">
+      </div>
+      <div id="me">
+      </div>
+      <div class="title maybe-show-them" style="display: none">
+        Preferred Dyad partners for <span class="name"></span>:
+      </div>
+      <div id="them" class="name-holder maybe-show-them" style="display:none">
       </div>
       <div class="button-holder">
         <div onclick="sendResults()" class="save-button disabled">
@@ -641,7 +641,7 @@
   };
 
   function resetPreferenceScreen() {
-    $('#enter-preferences').find('h1.prompt').text('Select your Name');
+    $("#enter-preferences").find("div.prompt").text("Select your name");
     myName = null;
     $('#them').empty();
     $('#unselected').empty();
@@ -667,11 +667,9 @@
       dataType: "json"
     }).done(function() {
       $('div.screen').hide();
-      resetPreferenceScreen();
       $('#thank-you').show();
     }).fail(function(jqXHR, textStatus, error) {
       $('div.screen').hide();
-      resetPreferenceScreen();
       $('#error').show();
     });
   };
@@ -681,7 +679,8 @@
     if (myName == undefined) {
       myName = $(element).text();
       $(element).hide();
-      $('#enter-preferences').find('h1.prompt').text('Select partners for ' + myName);
+      $("#enter-preferences").find("div.prompt").text("Select your preferred partners");
+      $("#enter-preferences").find("span.name").text(myName);
       $('div.preference-selector').find('div.save-button').removeClass('disabled');
       $('div.preference-selector').find('.maybe-show-them').show();
       return;
@@ -808,6 +807,7 @@
       }
 
       /* Enter preference data */
+      resetPreferenceScreen();
       populateNames();
       $('#enter-preferences').show();
       return;
