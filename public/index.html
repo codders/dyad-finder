@@ -30,6 +30,14 @@
       font-weight: 500;
     }
 
+    a {
+      color: white;
+    }
+
+    a:visited {
+      color: white;
+    }
+
     #select-group {
       align-items: center;
       display: flex;
@@ -307,6 +315,23 @@
       background-color: green;
     }
 
+    #footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 24px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 24px;
+      margin: 10px;
+    }
+
+    #footer img {
+      height: 18px;
+      margin: -3px 5px;
+    }
+
   </style>
 </head>
 <body onload="start()">
@@ -387,7 +412,7 @@
   <div id="select-group" style="display: none" class="screen">
     <div class="headline">
       <h1>Dyad Finder</h1>
-      <p>Dyad Finder helps you find matched pairs of people from a larger group. To start, simply type in a group name below and hit 'GO', and you will be prompted to list the larger group's members.</p>
+      <p>Dyad Finder helps you find matched pairs of people from a larger group, by inviting group members to share their partner preferences and calculating the <a href="https://en.wikipedia.org/wiki/Stable_roommates_problem" target="_blank">best possible matches</a>. To get started, simply type in a name for your group below and hit 'GO'.</p>
     </div>
     <div class="start">
       <div class="start-input-container">
@@ -491,6 +516,10 @@
     <div class="headline">
       <h1 class="prompt">Error - please try again</h1>
     </div>
+  </div>
+
+  <div id="footer" class="footer">
+    Created by Arthur Taylor - <a href="https://github.com/codders/dyad-finder"><img src="/GitHub-Mark-32px.png" height="24px"/>Source Code</a> 
   </div>
 </body>
 <script>
