@@ -46,7 +46,7 @@
 
     .headline {
       text-align: center;
-      width: 650px;
+      width: 680px;
     }
 
     .headline p {
@@ -264,7 +264,6 @@
      * Summary screen
      */
     #thank-you .next-steps {
-      width: 680px;
       background: white;
       opacity: 0.7;
       padding: 1rem;
@@ -278,7 +277,6 @@
      * Result screen
      */
     #result .matches {
-      width: 680px;
       background: white;
       opacity: 0.7;
       padding: 1rem;
@@ -324,6 +322,7 @@
     }
 
     #footer {
+      background-image: linear-gradient(-90deg,#1251AE 0,#0074FF 50%,#1251AE 100%);
       position: absolute;
       bottom: 0;
       width: 100%;
@@ -332,7 +331,6 @@
       font-size: 1rem;
       font-weight: 400;
       line-height: 24px;
-      margin: 10px;
       text-align: center;
     }
 
@@ -344,186 +342,191 @@
   </style>
 </head>
 <body onload="start()">
-  <div id="loading" style="display: none" class="screen">
-    <style>
-      .lds-grid {
-        width: 80px;
-        height: 80px;
-        top: 25%;
-        display: inline-block;
-        position: relative;
-      }
+  <div>
+    <div id="loading" style="display: none" class="screen">
+      <style>
+        .lds-grid {
+          width: 80px;
+          height: 80px;
+          top: 25%;
+          display: inline-block;
+          position: relative;
+        }
 
-      .lds-grid div {
-        position: absolute;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #cef;
-        animation: lds-grid 1.2s linear infinite;
-      }
-      .lds-grid div:nth-child(1) {
-        top: 8px;
-        left: 8px;
-        animation-delay: 0s;
-      }
-      .lds-grid div:nth-child(2) {
-        top: 8px;
-        left: 32px;
-        animation-delay: -0.4s;
-      }
-      .lds-grid div:nth-child(3) {
-        top: 8px;
-        left: 56px;
-        animation-delay: -0.8s;
-      }
-      .lds-grid div:nth-child(4) {
-        top: 32px;
-        left: 8px;
-        animation-delay: -0.4s;
-      }
-      .lds-grid div:nth-child(5) {
-        top: 32px;
-        left: 32px;
-        animation-delay: -0.8s;
-      }
-      .lds-grid div:nth-child(6) {
-        top: 32px;
-        left: 56px;
-        animation-delay: -1.2s;
-      }
-      .lds-grid div:nth-child(7) {
-        top: 56px;
-        left: 8px;
-        animation-delay: -0.8s;
-      }
-      .lds-grid div:nth-child(8) {
-        top: 56px;
-        left: 32px;
-        animation-delay: -1.2s;
-      }
-      .lds-grid div:nth-child(9) {
-        top: 56px;
-        left: 56px;
-        animation-delay: -1.6s;
-      }
-      @keyframes lds-grid {
-        0%, 100% {
-          opacity: 1;
+        .lds-grid div {
+          position: absolute;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #cef;
+          animation: lds-grid 1.2s linear infinite;
         }
-        50% {
-          opacity: 0.5;
+        .lds-grid div:nth-child(1) {
+          top: 8px;
+          left: 8px;
+          animation-delay: 0s;
         }
-      }
-    </style>
-    <div class="lds-grid"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-  </div>
-  <div id="select-group" style="display: none" class="screen">
-    <div class="headline">
-      <h1>Dyad Finder</h1>
-      <p>Dyad Finder helps you find matched pairs of people from a larger group, by inviting group members to share their partner preferences and calculating the <a href="https://en.wikipedia.org/wiki/Stable_roommates_problem" target="_blank">best possible matches</a>. To get started, simply type in a name for your group below and hit 'GO'.</p>
+        .lds-grid div:nth-child(2) {
+          top: 8px;
+          left: 32px;
+          animation-delay: -0.4s;
+        }
+        .lds-grid div:nth-child(3) {
+          top: 8px;
+          left: 56px;
+          animation-delay: -0.8s;
+        }
+        .lds-grid div:nth-child(4) {
+          top: 32px;
+          left: 8px;
+          animation-delay: -0.4s;
+        }
+        .lds-grid div:nth-child(5) {
+          top: 32px;
+          left: 32px;
+          animation-delay: -0.8s;
+        }
+        .lds-grid div:nth-child(6) {
+          top: 32px;
+          left: 56px;
+          animation-delay: -1.2s;
+        }
+        .lds-grid div:nth-child(7) {
+          top: 56px;
+          left: 8px;
+          animation-delay: -0.8s;
+        }
+        .lds-grid div:nth-child(8) {
+          top: 56px;
+          left: 32px;
+          animation-delay: -1.2s;
+        }
+        .lds-grid div:nth-child(9) {
+          top: 56px;
+          left: 56px;
+          animation-delay: -1.6s;
+        }
+        @keyframes lds-grid {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      </style>
+      <div class="lds-grid"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
     </div>
-    <div class="start">
-      <div class="start-input-container">
-        <div class="title">
-          Create Group
+    <div id="select-group" style="display: none" class="screen">
+      <div class="headline">
+        <h1>Dyad Finder</h1>
+        <p>Dyad Finder helps you find matched pairs of people from a larger group, by inviting group members to share their partner preferences and calculating the <a href="https://en.wikipedia.org/wiki/Stable_roommates_problem" target="_blank">best possible matches</a>. To get started, simply type in a name for your group below and hit 'GO'.</p>
+      </div>
+      <div class="start">
+        <div class="start-input-container">
+          <div class="title">
+            Create Group
+          </div>
+          <input type="text" id="group-name"></input>
         </div>
-        <input type="text" id="group-name"></input>
-      </div>
-      <div class="start-button default" onclick="navigateToGroup()">GO</div>
-    </div>
-  </div>
-  <div id="populate-group" style="display:none" class="screen">
-    <div class="headline">
-      <h1>Populate Group <span class="display-group-name"></span></h1>
-    </div>
-    <div class="title">
-      Members
-    </div>
-    <div class="group-members">
-    </div>
-    <div class="data-entry">
-      <div class="input-container">
-        <input type="text" id="member-name"></input>
-      </div>
-      <div class="add-button default" onclick="addMemberToGroup()">ADD</div>
-    </div>
-    <div class="button-holder">
-      <div onclick="updateGroup()" class="save-button">
-        SAVE GROUP
+        <div class="start-button default" onclick="navigateToGroup()">GO</div>
       </div>
     </div>
-  </div>
-  <div id="enter-preferences" style="display: none" class="screen">
-    <div class="headline">
-      <h1 class="prompt">Submit your preferences</h1>
-    </div>
-    <div class="preference-selector">
-      <div class="title prompt">
-        Group members
+    <div id="populate-group" style="display:none" class="screen">
+      <div class="headline">
+        <h1>Populate Group <span class="display-group-name"></span></h1>
       </div>
-      <div id="unselected" class="name-holder">
+      <div class="title">
+        Members
       </div>
-      <div id="me">
+      <div class="group-members">
       </div>
-      <div class="title maybe-show-them" style="display: none">
-        Preferred Dyad partners for <span class="name"></span>:
-      </div>
-      <div id="them" class="name-holder maybe-show-them" style="display:none">
+      <div class="data-entry">
+        <div class="input-container">
+          <input type="text" id="member-name"></input>
+        </div>
+        <div class="add-button default" onclick="addMemberToGroup()">ADD</div>
       </div>
       <div class="button-holder">
-        <div onclick="sendResults()" class="save-button disabled">
-          SAVE PREFERENCES 
+        <div onclick="updateGroup()" class="save-button">
+          SAVE GROUP
         </div>
       </div>
     </div>
-  </div>
-  <div id="thank-you" style="display:none" class="screen">
-    <div class="headline">
-      <h1 class="prompt">Preferences submitted!</h1>
-    </div>
-    <div class="next-steps">
-      <div class="button-holder">
-        <div onclick="selectScreen()" class="save-button">
-          ENTER MORE PREFERENCES
+    <div id="enter-preferences" style="display: none" class="screen">
+      <div class="headline">
+        <h1 class="prompt">Submit your preferences</h1>
+        <p>First select your name by clicking on it below, then select (in preference order) the people that you might like to be matched with. Hit 'Save preferences' when you are done.</p>
+      </div>
+      <div class="preference-selector">
+        <div class="title prompt">
+          Group members
+        </div>
+        <div id="unselected" class="name-holder">
+        </div>
+        <div id="me">
+        </div>
+        <div class="title maybe-show-them" style="display: none">
+          Preferred Dyad partners for <span class="name"></span>:
+        </div>
+        <div id="them" class="name-holder maybe-show-them" style="display:none">
+        </div>
+        <div class="button-holder">
+          <div onclick="sendResults()" class="save-button disabled">
+            SAVE PREFERENCES 
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div id="result" style="display:none" class="screen">
-    <div class="headline">
-      <h1 class="prompt">Matching Result</h1>
-    </div>
-    <div class="matches">
-    </div>
-  </div>
-  <div id="group-status" style="display:none" class="screen">
-    <div class="headline">
-      <h1><span class="display-group-name"></span> Group Overview</h1>
-    </div>
-    <div class="title">
-      Group URLs
-    </div>
-    <div class="url-list">
-      <div class="url">
-        Survey Link:<br/>
-        <span class="survey_url"></span>
+    <div id="thank-you" style="display:none" class="screen">
+      <div class="headline">
+        <h1 class="prompt">Preferences submitted!</h1>
+        <p>Your preferences have been sent to the group creator. They will let you know who you have been matched with once all preferences have been collected.</p>
       </div>
-      <div class="url">
-        Result Link:<br/>
-        <span class="result_url"></span>
+      <div class="next-steps">
+        <div class="button-holder">
+          <div onclick="selectScreen()" class="save-button">
+            ENTER MORE PREFERENCES
+          </div>
+        </div>
       </div>
     </div>
-    <div class="title">
-      Members
+    <div id="result" style="display:none" class="screen">
+      <div class="headline">
+        <h1 class="prompt">Matching Result</h1>
+        <p>You can see the calculated matches below. The list will be complete when all participants have submitted their preferences. If you have an odd number of participants, someone will be missing from this list. If you don't see anything here, no match could be found based on the current preference data.</p>
+      </div>
+      <div class="matches">
+      </div>
     </div>
-    <div class="group-members">
+    <div id="group-status" style="display:none" class="screen">
+      <div class="headline">
+        <h1><span class="display-group-name"></span> Group Overview</h1>
+        <p>You can share the Survey Link with group members to allow them to submit their preferences. As we receive the submissions, the names will turn green below. When all the names are green, visit the Result Link to see the final matching</p>
+      </div>
+      <div class="title">
+        Group URLs
+      </div>
+      <div class="url-list">
+        <div class="url">
+          Survey Link:<br/>
+          <span class="survey_url"></span>
+        </div>
+        <div class="url">
+          Result Link:<br/>
+          <span class="result_url"></span>
+        </div>
+      </div>
+      <div class="title">
+        Members
+      </div>
+      <div class="group-members">
+      </div>
     </div>
-  </div>
-
-  <div id="error" style="display:none" class="screen">
-    <div class="headline">
-      <h1 class="prompt">Error - please try again</h1>
+    <div id="error" style="display:none" class="screen">
+      <div class="headline">
+        <h1 class="prompt">Error - please try again</h1>
+      </div>
     </div>
   </div>
 
