@@ -315,6 +315,14 @@
       background-color: green;
     }
 
+    #group-status a {
+      color: black;
+    }
+
+    #group-status a:visited {
+      color: black;
+    }
+
     #footer {
       position: absolute;
       bottom: 0;
@@ -325,6 +333,7 @@
       font-weight: 400;
       line-height: 24px;
       margin: 10px;
+      text-align: center;
     }
 
     #footer img {
@@ -890,6 +899,18 @@
     }
   }
 
+  function onBrowserNavigate() {
+    console.log("Browser navigated - new group: " + getGroupName() + " old: " + loadedGroupName);
+    if (update_timer != undefined) {
+      console.log("Clearing update timer");
+      window.clearTimeout(update_timer);
+    }
+    if (getGroupName() != loadedGroupName) {
+      clearGroupState();
+    }
+    selectScreen();
+  }
+
   function start() {
     $.each([ 'select-group', 'populate-group' ], function(i,e) {
       $('#' + e).keypress(function(event) {
@@ -898,17 +919,11 @@
         }
       });
     });
-    window.onhashchange = function() {
-      console.log("Hash change - new group: " + getGroupName() + " old: " + loadedGroupName);
-      if (update_timer != undefined) {
-        console.log("Clearing update timer");
-        window.clearTimeout(updateTimer);
-      }
-      if (getGroupName() != loadedGroupName) {
-        clearGroupState();
-      }
-      selectScreen();
-    } 
+    window.onpopstate = function(event) {
+      console.log("Popped");
+      popped = true;
+      onBrowserNavigate();
+    }
     selectScreen();
   }
 
