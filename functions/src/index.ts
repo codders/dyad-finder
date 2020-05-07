@@ -7,6 +7,7 @@ import * as express from 'express';
 import * as cors from 'cors';
 
 import * as solver from './solver';
+import * as triple_solver from './triple_solver';
 
 admin.initializeApp();
 
@@ -126,6 +127,16 @@ app.get('/group/:id', (req, res) => {
 app.get('/group/:id/matches', (req, res) => {
   return preferencesForGroup(req.params.id).then(result => {
     res.status(200).send(solver.solve(result));
+  })
+    .catch(error => {
+      console.log("Unable to get match result for group " + req.params.id, error);
+      res.status(500).json({ error: error.message });
+    });
+});
+
+app.get('/group/:id/triples', (req, res) => {
+  return preferencesForGroup(req.params.id).then(result => {
+    res.status(200).send(triple_solver.solve_for_triples(result));
   })
     .catch(error => {
       console.log("Unable to get match result for group " + req.params.id, error);

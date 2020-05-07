@@ -58,6 +58,20 @@
       margin-bottom: 20px;
     }
 
+    .info {
+      text-align: center;
+      width: 680px;
+    }
+
+    .info p {
+      display: inherit;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 24px;
+      margin-bottom: 20px;
+    }
+
     #loading {
       width: 100%;
       height: 100vh;
@@ -323,8 +337,7 @@
 
     #footer {
       background-image: linear-gradient(-90deg,#1251AE 0,#0074FF 50%,#1251AE 100%);
-      position: absolute;
-      bottom: 0;
+      position: relative;
       width: 100%;
       height: 24px;
       color: #fff;
@@ -496,7 +509,12 @@
         <h1 class="prompt">Matching Result</h1>
         <p>You can see the calculated matches below. The list will be complete when all participants have submitted their preferences. If you have an odd number of participants, someone will be missing from this list. If you don't see anything here, no match could be found based on the current preference data.</p>
       </div>
-      <div class="matches">
+      <div class="matches pairs">
+      </div>
+      <div class="info triples">
+        <p>If you prefer to match in groups of three, a possible assignment is shown below. Note that although this matching makes use of the stable matching algorithm too, it does not guarantee to be stable - the algorithm for stable matching of triples has not been implemented.</p>
+      </div>
+      <div class="matches triples">
       </div>
     </div>
     <div id="group-status" style="display:none" class="screen">
@@ -609,6 +627,10 @@
     return groupURL() + "/matches";
   };
 
+  function groupTripleResultURL() {
+    return groupURL() + "/triples";
+  };
+
   function groupPreferencesURL() {
     return groupURL() + "/preferences";
   };
@@ -627,12 +649,24 @@
   };
 
   function getMatchingResult() {
-    return $.ajax({
-      url: groupResultURL(),
-      dataType: 'json'
-    }).then(function(data, textStatus, jqXHR) {
-      return data;
-    });
+    return Promise.all([
+      $.ajax({
+        url: groupResultURL(),
+        dataType: 'json'
+      }).then(function(data, textStatus, jqXHR) {
+        return data;
+      }).catch(function(error) {
+        return { matching: [], reason: "Fetch failed" }
+      }),
+      $.ajax({
+        url: groupTripleResultURL(),
+        dataType: 'json'
+      }).then(function(data, textStatus, jqXHR) {
+        return data;
+      }).catch(function(error) {
+        return { matching: [], reason: "Fetch failed" }
+      })
+    ]);
   };
 
   function getPreferenceStatus() {
@@ -786,6 +820,13 @@
     return div;
   };
 
+  function createTripleMatch(match) {
+    var div = document.createElement('div');
+    div.append(match[0] + " <-> " + match[1] + " <-> " + match[2]);
+    $(div).addClass("match");
+    return div;
+  };
+
   function createLink(selector, url) {
     $(selector).empty();
     var a = document.createElement('a');
@@ -878,12 +919,20 @@
       case "result":
         $('#loading').show();
         $('#result div.matches').empty();
-        getMatchingResult().then(function(result) {
+        getMatchingResult().then(function(results) {
           $('#loading').hide();
-          console.log("Result", result);
+          console.log("Results", results);
           $('#result').show();
-          $.each(result.matching, function(i, match) {
-            $('#result div.matches').append(createMatch(match));
+          $.each(results[0].matching, function(i, match) {
+            $('#result div.matches.pairs').append(createMatch(match));
+          }); 
+          if (results[1].matching.length == 0) {
+            $('.triples').hide();
+          } else {
+            $('.triples').show();
+          }
+          $.each(results[1].matching, function(i, match) {
+            $('#result div.matches.triples').append(createTripleMatch(match));
           }); 
         }); 
         break;

@@ -57,7 +57,7 @@ export const solve_for_triples = (preferences: PreferenceRecord): TripleAssignme
   console.log("SOLVING FOR TRIPLES");
   console.log("Preferences " + JSON.stringify(preferences, undefined, 2));
   let thirds = dyad_matching.unmatched || [];
-  let pairs = dyad_matching.matching;
+  const pairs = dyad_matching.matching;
   console.log("Unmatched: " + thirds);
   while (pairs.length > 1 && thirds.length < pairs.length) {
     const unpopped = pairs.pop() || [];
@@ -73,7 +73,7 @@ export const solve_for_triples = (preferences: PreferenceRecord): TripleAssignme
   const result: TripleAssignment = { 
     matching: triple_solution.matching.map(match => unpack_dyad(match[0]).concat(unpack_dyad(match[1]))).map(match => match.sort()).map(match => [match[0], match[1], match[2]])
   };
-  if (triple_solution.unmatched != undefined) {
+  if (triple_solution.unmatched !== undefined) {
     result.unmatched = triple_solution.unmatched.map(match => unpack_dyad(match)).reduce((i, a) => i.concat(a), []);
   }
   result.reason = [ triple_solution.reason, dyad_matching.reason ].filter(i => i !== undefined).reduce((i,a) => i.concat(a!), <string[]>[]).join(", ");
