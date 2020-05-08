@@ -722,7 +722,7 @@
       if (expressed_preferences.includes(name)) {
         $(div).addClass("have_preference");
       }
-      div.append(document.createTextNode(name));
+      $(div).append(document.createTextNode(name));
       $('.group-members').append(div);
     });
   };
@@ -806,7 +806,7 @@
 
   function createButton(name) {
     var button = document.createElement('div');
-    button.append(name);
+    $(button).append(name);
     $(button).addClass("person");
     $(button).addClass("unselected");
     $(button).click(function() { switchPosition(button); });
@@ -815,14 +815,14 @@
 
   function createMatch(match) {
     var div = document.createElement('div');
-    div.append(match[0] + " <-> " + match[1]);
+    $(div).append(match[0] + " <-> " + match[1]);
     $(div).addClass("match");
     return div;
   };
 
   function createTripleMatch(match) {
     var div = document.createElement('div');
-    div.append(match[0] + " <-> " + match[1] + " <-> " + match[2]);
+    $(div).append(match[0] + " <-> " + match[1] + " <-> " + match[2]);
     $(div).addClass("match");
     return div;
   };
