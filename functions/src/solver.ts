@@ -157,7 +157,7 @@ const lastPreference =
   (state: {[key: string]: ProposerState}, name: string): string => {
     const preferences = state[name].preferences;
     return preferences[preferences.length - 1];
-  }
+  };
 
 export const calculateNextLoopEntry =
   (currentEntry: [string, string],
@@ -226,11 +226,11 @@ export const removeLoop =
       state[cell[0]].preferences = state[cell[0]].preferences.slice(1);
       log("After R1: " + JSON.stringify(state, undefined, 2));
       const removedItems = state[cell[1]]
-        .preferences
-        .slice(state[cell[1]]
-            .preferences
-            .indexOf(previousCell[0]) + 1,
-            state[cell[1]].preferences.length + 1);
+          .preferences
+          .slice(state[cell[1]]
+              .preferences
+              .indexOf(previousCell[0]) + 1,
+          state[cell[1]].preferences.length + 1);
       log("Removing everything after " +
         previousCell[0] +
         " from " + cell[1] + "'s preferences, i.e. " +
@@ -243,7 +243,8 @@ export const removeLoop =
       removedItems.forEach((target) => {
         log("Removing " + cell[1] + " from " + target +
           "'s preferences");
-        state[target].preferences = state[target].preferences.filter((a) => a !== cell[1]);
+        state[target].preferences = state[target]
+            .preferences.filter((a) => a !== cell[1]);
       });
       log("After R2: " + JSON.stringify(state, undefined, 2));
     }
@@ -327,11 +328,11 @@ export const sanityCheckAndFixupLists =
     return preferences;
   };
 
-export function dumpConsoleLog() {
+const dumpConsoleLog = () => {
   logBuffer.forEach((line) => {
     console.log(line);
   });
-}
+};
 
 export const solve = (preferences: PreferenceRecord): Assignment => {
   logBuffer = <string[]>[];

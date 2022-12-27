@@ -77,8 +77,8 @@ describe("test solver api", () => {
       ],
     });
     assert.deepEqual(
-      {matching: [["A","D"], ["B","C"], ["E","F"]]},
-      solution
-    )
+        {matching: [["A", "D"], ["B", "C"], ["E", "F"]]},
+        solution
+    );
   });
 });
