@@ -1,85 +1,110 @@
-'use strict';
+"use strict";
 
-import * as solver from './solver';
+import * as solver from "./solver";
 
 interface RankScoring {
   [key: string]: { [key: string]: number };
 }
 
-const dyad_key = (dyad: [string,string]): string => {
+const dyadKey = (dyad: [string, string]): string => {
   return dyad.sort().join("/");
-}
+};
 
 const score = (a: string, b: string, preferences: PreferenceRecord): number => {
   return preferences["student_prefs"][0][a].indexOf(b);
-}
+};
 
-const score_dyads = (dyads: [string,string][], thirds: string[], preferences: PreferenceRecord): RankScoring => {
+const scoreDyads = (dyads: [string, string][],
+    thirds: string[],
+    preferences: PreferenceRecord): RankScoring => {
   const result: RankScoring = {};
-  thirds.forEach(third => {
-    dyads.forEach(dyad => {
+  thirds.forEach((third) => {
+    dyads.forEach((dyad) => {
       if (result[third] === undefined) {
         result[third] = {};
       }
-      result[third][dyad_key(dyad)] = (score(third, dyad[0], preferences) + score(third, dyad[1], preferences))/2;
-    });      
-  });
-  return result;
-}
-
-const score_thirds = (dyads: [string,string][], thirds: string[], preferences: PreferenceRecord): RankScoring => {
-  const result: RankScoring = {};
-  dyads.forEach(dyad => {
-    thirds.forEach(third => {
-      if (result[dyad_key(dyad)] === undefined) {
-        result[dyad_key(dyad)] = {};
-      }
-      result[dyad_key(dyad)][third] = (score(dyad[0], third, preferences) + score(dyad[1], third, preferences))/2;
+      result[third][dyadKey(dyad)] = (
+        score(third, dyad[0], preferences) +
+          score(third, dyad[1], preferences)
+      )/2;
     });
   });
   return result;
-}
+};
 
-const ranks_to_preference = (ranks: RankScoring) => {
-  const result: { [key: string]: string[] } = {};
-  Object.keys(ranks).forEach(ranker => {
-    result[ranker] = Object.entries(ranks[ranker]).sort((a, b) => a[1] - b[1]).map(a => a[0]);
+const scoreThirds = (dyads: [string, string][],
+    thirds: string[],
+    preferences: PreferenceRecord): RankScoring => {
+  const result: RankScoring = {};
+  dyads.forEach((dyad) => {
+    thirds.forEach((third) => {
+      if (result[dyadKey(dyad)] === undefined) {
+        result[dyadKey(dyad)] = {};
+      }
+      result[dyadKey(dyad)][third] = (
+        score(dyad[0], third, preferences) +
+            score(dyad[1], third, preferences)
+      )/2;
+    });
   });
   return result;
-}
+};
 
-const unpack_dyad = (key: string): string[] => {
-  return key.split("/");
-}
-
-export const solve_for_triples = (preferences: PreferenceRecord): TripleAssignment => {
-  const dyad_matching = solver.solve(preferences);
-  console.log("SOLVING FOR TRIPLES");
-  console.log("Preferences " + JSON.stringify(preferences, undefined, 2));
-  let thirds = dyad_matching.unmatched || [];
-  const pairs = dyad_matching.matching;
-  console.log("Unmatched: " + thirds);
-  while (pairs.length > 1 && thirds.length < pairs.length) {
-    const unpopped = pairs.pop() || [];
-    thirds = thirds.concat(unpopped);
-  }
-  const dyad_scores = score_dyads(pairs, thirds, preferences);
-  const third_scores = score_thirds(pairs, thirds, preferences);
-  console.log("Scores for dyads: ", dyad_scores);
-  console.log("Dyad scores for thirds: ", third_scores);
-  const triple_preferences = Object.assign(ranks_to_preference(dyad_scores), ranks_to_preference(third_scores));
-  console.log("Triple Preferences: " + JSON.stringify(triple_preferences, undefined, 2));
-  const triple_solution = solver.solve({ "student_prefs": [ triple_preferences ] });
-  const result: TripleAssignment = { 
-    matching: triple_solution.matching.map(match => unpack_dyad(match[0]).concat(unpack_dyad(match[1]))).map(match => match.sort()).map(match => [match[0], match[1], match[2]])
-  };
-  if (triple_solution.unmatched !== undefined) {
-    result.unmatched = triple_solution.unmatched.map(match => unpack_dyad(match)).reduce((i, a) => i.concat(a), []);
-  }
-  result.reason = [ triple_solution.reason, dyad_matching.reason ].filter(i => i !== undefined).reduce((i,a) => i.concat(a!), <string[]>[]).join(", ");
-  if (result.reason === "") {
-    delete result.reason;
-  }
+const ranksToPreference = (ranks: RankScoring) => {
+  const result: { [key: string]: string[] } = {};
+  Object.keys(ranks).forEach((ranker) => {
+    result[ranker] = Object.entries(ranks[ranker])
+        .sort((a, b) => a[1] - b[1]).map((a) => a[0]);
+  });
   return result;
-}
+};
+
+const unpackDyad = (key: string): string[] => {
+  return key.split("/");
+};
+
+export const solveForTriples =
+  (preferences: PreferenceRecord): TripleAssignment => {
+    const dyadMatching = solver.solve(preferences);
+    console.log("SOLVING FOR TRIPLES");
+    console.log("Preferences " + JSON.stringify(preferences, undefined, 2));
+    let thirds = dyadMatching.unmatched || [];
+    const pairs = dyadMatching.matching;
+    console.log("Unmatched: " + thirds);
+    while (pairs.length > 1 && thirds.length < pairs.length) {
+      const unpopped = pairs.pop() || [];
+      thirds = thirds.concat(unpopped);
+    }
+    const dyadScores = scoreDyads(pairs, thirds, preferences);
+    const thirdScores = scoreThirds(pairs, thirds, preferences);
+    console.log("Scores for dyads: ", dyadScores);
+    console.log("Dyad scores for thirds: ", thirdScores);
+    const triplePreferences = Object.assign(
+        ranksToPreference(dyadScores),
+        ranksToPreference(thirdScores)
+    );
+    console.log("Triple Preferences: " +
+      JSON.stringify(triplePreferences, undefined, 2));
+    const tripleSolution = solver.solve(
+        {"student_prefs": [triplePreferences]});
+    const result: TripleAssignment = {
+      matching: tripleSolution.matching.map((match) =>
+        unpackDyad(match[0]).concat(unpackDyad(match[1])))
+          .map((match) => match.sort())
+          .map((match) => [match[0], match[1], match[2]]),
+    };
+    if (tripleSolution.unmatched !== undefined) {
+      result.unmatched = tripleSolution.unmatched.map((match) =>
+        unpackDyad(match))
+          .reduce((i, a) => i.concat(a), []);
+    }
+    result.reason = [tripleSolution.reason, dyadMatching.reason]
+        .filter((i) => i !== undefined)
+        .reduce((i, a) => i.concat(a!), <string[]>[])
+        .join(", ");
+    if (result.reason === "") {
+      delete result.reason;
+    }
+    return result;
+  };
 

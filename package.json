@@ -1,17 +1,14 @@
 {
-  "name": "dyad-finder-simple",
+  "name": "dyad-finder",
   "version": "1.0.0",
   "description": "",
-  "main": "index.html",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "firebase": "^7.14.2"
-  },
-  "devDependencies": {
-    "firebase-tools": "^8.2.0"
+    "firebase-tools": "^11.18.0"
   }
 }

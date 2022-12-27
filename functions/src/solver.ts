@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 interface ProposerState {
   name: string,
@@ -6,289 +6,351 @@ interface ProposerState {
   preferences: string[]
 }
 
-let log_buffer : string[];
+let logBuffer : string[];
 
-const log = (...strings: any[]) => {
-  log_buffer.push(strings.join(""));
-}
+const log = (...strings: string[]) => {
+  logBuffer.push(strings.join(""));
+};
 
-const remove_preference = (preference: string, targets: string[], state: { [key: string]: ProposerState }) => {
-  targets.forEach(target => {
-    log("Removing " + preference + " from preferences for " + target + " (if present)");
+const removePreference = (
+    preference: string,
+    targets: string[],
+    state: {[key: string]: ProposerState}
+) => {
+  targets.forEach((target) => {
+    log("Removing " + preference + " from preferences for " +
+      target + " (if present)");
     if (state[target].preferences.includes(preference)) {
-      state[target].preferences.splice(state[target].preferences.indexOf(preference), 1);
+      state[target].preferences.splice(
+          state[target].preferences.indexOf(preference),
+          1
+      );
     }
   });
-}
+};
 
-const make_proposal = (proposer: string, state: { [key: string]: ProposerState }, force_accept: boolean) => {
+const makeProposal = (
+    proposer: string,
+    state: {[key: string]: ProposerState},
+    forceAccept: boolean
+) => {
   log("Making proposal as " + proposer);
-  const proposer_preference = state[proposer].preferences;
-  if (proposer_preference.length === 0) {
+  const proposerPreference = state[proposer].preferences;
+  if (proposerPreference.length === 0) {
     log("Proposer " + proposer + " has no further preferences");
     return;
   }
-  const first_preference = proposer_preference[0];
-  if (state[first_preference].preferences.includes(proposer) || force_accept) {
-    log("Proposee " + first_preference + " is interested in my proposal");
-    state[first_preference].acceptedProposal = proposer;
-    const rejected = state[first_preference].preferences.slice(state[first_preference].preferences.indexOf(proposer) + 1);
-    remove_preference(first_preference, rejected, state);
-    state[first_preference].preferences = state[first_preference].preferences.slice(0, state[first_preference].preferences.indexOf(proposer) + 1);
-    if (force_accept) {
-      state[proposer].acceptedProposal = first_preference;
+  const firstPreference = proposerPreference[0];
+  if (state[firstPreference].preferences.includes(proposer) || forceAccept) {
+    log("Proposee " + firstPreference + " is interested in my proposal");
+    state[firstPreference].acceptedProposal = proposer;
+    const rejected = state[firstPreference].preferences.slice(
+        state[firstPreference].preferences.indexOf(proposer) + 1
+    );
+    removePreference(firstPreference, rejected, state);
+    state[firstPreference].preferences = state[firstPreference]
+        .preferences
+        .slice(0, state[firstPreference].preferences.indexOf(proposer) + 1);
+    if (forceAccept) {
+      state[proposer].acceptedProposal = firstPreference;
     }
   }
-}
+};
 
-const proposer_map = (preferences: PreferenceRecord): { [key: string]:  ProposerState } => {
-  const result = <{ [key: string]: ProposerState}>{};
-  Object.entries(preferences.student_prefs[0]).forEach(([key, value]) => {
-    result[key] = {
-      name: key,
-      preferences: value
+const proposerMap =
+    (preferences: PreferenceRecord): {[key: string]: ProposerState} => {
+      const result = <{ [key: string]: ProposerState}>{};
+      Object.entries(preferences.student_prefs[0]).forEach(([key, value]) => {
+        result[key] = {
+          name: key,
+          preferences: value,
+        };
+      });
+      return result;
     };
-  });
-  return result;
-}
 
-const extract_assignment = (state: { [key: string]:  ProposerState }): Assignment => {
-  const result = <[string,string][]>[];
-  const proposers = Object.keys(state);
-  while (proposers.length > 0) {
-    const proposer = proposers[0];
-    if (state[proposer].acceptedProposal !== undefined && state[state[proposer].acceptedProposal!].acceptedProposal === proposer) {
-      result.push([proposer, state[proposer].acceptedProposal!]);
-      proposers.splice(proposers.indexOf(state[proposer].acceptedProposal!), 1);
-    } else {
-      log("No match found for " + proposer);
+const extractAssignment =
+    (state: {[key: string]: ProposerState}): Assignment => {
+      const result = <[string, string][]>[];
+      const proposers = Object.keys(state);
+      while (proposers.length > 0) {
+        const proposer = proposers[0];
+        if (state[proposer].acceptedProposal !== undefined &&
+            state[state[proposer].acceptedProposal!].acceptedProposal ===
+              proposer) {
+          result.push([proposer, state[proposer].acceptedProposal!]);
+          proposers.splice(
+              proposers.indexOf(state[proposer].acceptedProposal!), 1);
+        } else {
+          log("No match found for " + proposer);
+        }
+        proposers.shift();
+      }
+      return {matching: result};
+    };
+
+export const notAllMatched =
+  (state: {[key: string]: ProposerState}): boolean => {
+    let allMatched = true;
+    Object.keys(state).forEach((name) => {
+      if (state[name].acceptedProposal === undefined ||
+          state[name].preferences.length > 0) {
+        allMatched = false;
+      }
+    });
+    return !allMatched;
+  };
+
+export const executePhase1 =
+  (state: {[key: string]: ProposerState}, forceAccept: boolean) => {
+    log("Executing Phase 1");
+    let changed = true;
+    while (changed && notAllMatched(state)) {
+      changed = false;
+      const preImage = JSON.stringify(state);
+
+      const proposers = Object.keys(state);
+      log("ProposerArray: " + JSON.stringify(proposers));
+
+      log("Making round of proposals");
+      proposers.forEach((name) =>
+        makeProposal(name, state, forceAccept));
+      log("Proposers: " + JSON.stringify(state, undefined, 2));
+      changed = (JSON.stringify(state) !== preImage);
+      log("Changed: " + changed);
     }
-    proposers.shift();
-  } 
-  return { matching: result };
-}
+    log("Phase 1 complete");
+  };
 
-export const not_all_matched = (state: { [key: string]:  ProposerState }): boolean => {
-  let all_matched = true;
-  Object.keys(state).forEach(name => {
-    if (state[name].acceptedProposal === undefined || state[name].preferences.length > 0) {
-      all_matched = false;
+export const unstable =
+  (state: {[key: string]: ProposerState}): boolean => {
+    let isUnstable = false;
+    Object.keys(state).forEach((name) => {
+      if (state[name].preferences.length === 0) {
+        isUnstable = true;
+      }
+    });
+    log("Map unstable? " + isUnstable);
+    return isUnstable;
+  };
+
+export const minimalStable =
+  (state: {[key: string]: ProposerState}): boolean => {
+    let stable = true;
+    Object.keys(state).forEach((name) => {
+      if (state[name].preferences.length !== 1) {
+        stable = false;
+      }
+    });
+    log("Map stable? " + stable);
+    return stable;
+  };
+
+export const calculateNextLoopEntry =
+  (currentEntry: [string, string],
+      state: {[key: string]: ProposerState}): [string, string] => {
+    const qidash = state[currentEntry[0]].preferences[1];
+    const pidash = state[qidash].preferences[
+        state[qidash].preferences.length - 1
+    ];
+    return <[string, string]>[pidash, qidash];
+  };
+
+export const tupleListIncludes =
+  (list: [string, string][], tuple: [string, string]): boolean => {
+    let found = false;
+    list.forEach((entry) => {
+      if (entry[0] === tuple[0] && entry[1] === tuple[1]) {
+        found = true;
+      }
+    });
+    return found;
+  };
+
+export const tupleListTail =
+  (list: [string, string][], head: [string, string]): [string, string][] => {
+    const result = <[string, string][]>[];
+    let copying = false;
+    list.forEach((entry) => {
+      if (entry[0] === head[0] && entry[1] === head[1]) {
+        copying = true;
+      }
+      if (copying) {
+        result.push(entry);
+      }
+    });
+    return result;
+  };
+
+export const findLoop =
+  (state: {[key: string]: ProposerState}): [string, string][] => {
+    log("Looking for a loop");
+    const loopStart = Object.keys(state).find((name) =>
+      state[name].preferences.length > 1);
+    log("Starting with: " + loopStart!);
+    const loopEntries = <[string, string][]>[];
+    let nextEntry: [string, string] = [
+      loopStart!,
+      state[loopStart!].preferences[0],
+    ];
+    while (!tupleListIncludes(loopEntries, nextEntry)) {
+      log("  Adding " + nextEntry);
+      loopEntries.push(nextEntry);
+      nextEntry = calculateNextLoopEntry(nextEntry, state);
     }
-  });
-  return !all_matched;
-}
 
-export const execute_phase_1 = (state: { [key: string]:  ProposerState }, force_accept: boolean) => {
-  log("Executing Phase 1");
-  let changed = true;
-  while (changed && not_all_matched(state)) {
-    changed = false;
-    const pre_image = JSON.stringify(state);
+    return tupleListTail(loopEntries, nextEntry);
+  };
 
-    const proposers = Object.keys(state);
-    log("ProposerArray: " + JSON.stringify(proposers));
-    
-    log("Making round of proposals");
-    proposers.forEach(name => make_proposal(name, state, force_accept));
-    log("Proposers: " + JSON.stringify(state, undefined, 2));
-    changed = (JSON.stringify(state) !== pre_image);
-    log("Changed: ", changed);
-  }
-  log("Phase 1 complete");
-}
-
-export const unstable = (state: { [key: string]:  ProposerState }): boolean => {
-  let is_unstable = false;
-  Object.keys(state).forEach(name => {
-    if (state[name].preferences.length === 0) {
-      is_unstable = true;
+export const removeLoop =
+  (state: {[key: string]: ProposerState}, loop: [string, string][]) => {
+    const loopWithBuffer = [loop[loop.length - 1]].concat(loop);
+    for (let i=1; i<loopWithBuffer.length; i++) {
+      const previousCell = loopWithBuffer[i-1];
+      const cell = loopWithBuffer[i];
+      log("Removing[" + cell[0] + ", " + cell[1] + "]");
+      log("Removing the head of " + cell[0] + "'s preferences");
+      state[cell[0]].preferences = state[cell[0]].preferences.slice(1);
+      log("After R1: " + JSON.stringify(state, undefined, 2));
+      log("Removing everything after " +
+        previousCell[0] +
+        " from " + cell[1] + "'s prefernces");
+      state[cell[1]].preferences = state[cell[1]]
+          .preferences
+          .slice(0, state[cell[1]]
+              .preferences
+              .indexOf(previousCell[0]) + 1);
+      log("After R2: " + JSON.stringify(state, undefined, 2));
     }
-  }); 
-  log("Map unstable? ", is_unstable);
-  return is_unstable;
-}
+  };
 
-export const minimal_stable = (state: { [key: string]:  ProposerState }): boolean => {
-  let stable = true;
-  Object.keys(state).forEach(name => {
-    if (state[name].preferences.length !== 1) {
-      stable = false;
-    }
-  }); 
-  log("Map stable? ", stable);
-  return stable;
-}
-
-export const calculate_next_loop_entry = (current_entry: [string,string], state: { [key: string]:  ProposerState }): [string,string] => {
-  const qidash = state[current_entry[0]].preferences[1];
-  const pidash = state[qidash].preferences[state[qidash].preferences.length - 1];
-  return <[string,string]>[pidash, qidash];
-}
-
-export const tuple_list_includes = (list: [string,string][], tuple: [string,string]): boolean => {
-  let found = false;
-  list.forEach(entry => {
-    if (entry[0] === tuple[0] && entry[1] === tuple[1]) {
-      found = true;
-    }
-  });
-  return found;
-}
-
-export const tuple_list_tail = (list: [string,string][], head: [string,string]): [string,string][] => {
-  const result = <[string,string][]>[];
-  let copying = false;
-  list.forEach(entry => {
-    if (entry[0] === head[0] && entry[1] === head[1]) {
-      copying = true;
-    }
-    if (copying) {
-      result.push(entry);
-    }
-  });
-  return result;
-}
-
-export const find_loop = (state: { [key: string]:  ProposerState }): [string,string][] => {
-  log("Looking for a loop");
-  const loop_start = Object.keys(state).find(name => state[name].preferences.length > 1);
-  log("Starting with: " + loop_start!);
-  const loop_entries = <[string,string][]>[];
-  let next_entry: [string,string] = [ loop_start!, state[loop_start!].preferences[0] ];
-  while (!tuple_list_includes(loop_entries, next_entry)) {
-    log("  Adding " + next_entry);
-    loop_entries.push(next_entry);
-    next_entry = calculate_next_loop_entry(next_entry, state);
-  }
-  
-  return tuple_list_tail(loop_entries, next_entry);
-}
-
-export const remove_loop = (state: { [key: string]:  ProposerState }, loop: [string,string][]) => {
-  const loop_with_buffer = [loop[loop.length - 1]].concat(loop);
-  for (let i=1; i<loop_with_buffer.length; i++) {
-    const previous_cell = loop_with_buffer[i-1];
-    const cell = loop_with_buffer[i];
-    log("Removing ", cell); 
-    log("Removing the head of " + cell[0] + "'s preferences");
-    state[cell[0]].preferences = state[cell[0]].preferences.slice(1);
-    log("After R1: " + JSON.stringify(state, undefined, 2));
-    log("Removing everything after " + previous_cell[0] + " from " + cell[1] + "'s prefernces");
-    state[cell[1]].preferences = state[cell[1]].preferences.slice(0, state[cell[1]].preferences.indexOf(previous_cell[0]) + 1);
-    log("After R2: " + JSON.stringify(state, undefined, 2));
-  }
-}
-
-export const clear_acceptances = (state: { [key: string]:  ProposerState }) => {
-  Object.keys(state).forEach(key => {
+export const clearAcceptances = (state: {[key: string]: ProposerState}) => {
+  Object.keys(state).forEach((key) => {
     state[key].acceptedProposal = undefined;
   });
-}
+};
 
-export const solve_for_stable = (preferences: PreferenceRecord): Assignment => {
-  const map = JSON.parse(JSON.stringify(proposer_map(preferences)));
+export const solveForStable = (preferences: PreferenceRecord): Assignment => {
+  const map = JSON.parse(JSON.stringify(proposerMap(preferences)));
   log("Input Table: " + JSON.stringify(map, undefined, 2));
 
-  execute_phase_1(map, false);
+  executePhase1(map, false);
   if (unstable(map)) {
-    return { matching: [], reason: "Unstable map" };
+    return {matching: [], reason: "Unstable map"};
   }
   log("Phase 1 Table: " + JSON.stringify(map, undefined, 2));
-  while (!unstable(map) && !minimal_stable(map)) {
-    const loop = find_loop(map);
+  while (!unstable(map) && !minimalStable(map)) {
+    const loop = findLoop(map);
     log("Found loop: " + JSON.stringify(loop));
     if (loop.length > 0) {
-      remove_loop(map, loop);
+      removeLoop(map, loop);
       log("Proposers: " + JSON.stringify(map, undefined, 2));
     } else {
       break;
     }
   }
-  clear_acceptances(map);
-  execute_phase_1(map, false);
+  clearAcceptances(map);
+  executePhase1(map, false);
 
-  return extract_assignment(map);  
-}
+  return extractAssignment(map);
+};
 
-export const bogo_solve = (preferences: PreferenceRecord): Assignment => {
-  const map = JSON.parse(JSON.stringify(proposer_map(preferences)));
+export const bogoSolve = (preferences: PreferenceRecord): Assignment => {
+  const map = JSON.parse(JSON.stringify(proposerMap(preferences)));
   log("Proposers: " + JSON.stringify(map, undefined, 2));
   log("Bogo matching...");
-  execute_phase_1(map, true);
+  executePhase1(map, true);
 
-  return extract_assignment(map);
-}
+  return extractAssignment(map);
+};
 
-export const filter_matches = (preferences: PreferenceRecord, matches: [string,string][]): PreferenceRecord => {
-  const state = JSON.parse(JSON.stringify(preferences.student_prefs[0]));
-  const matched = matches.reduce((acc, r) => acc.concat([r[0], r[1]]), <string[]>[])
-  matched.forEach(student => { delete state[student] });
-  Object.keys(state).forEach(key => {
-    log("Filtering out " + key + " (" + state[key] + ")");
-    state[key] = state[key].filter((word: string) => !matched.includes(word))
-  });
-  return { student_prefs: [ state ] };
-}
-
-export const sanity_check_and_fixup_lists = (preferences: PreferenceRecord): PreferenceRecord => {
-  const map = preferences.student_prefs[0];
-  const all_keys = Object.keys(map);
-  all_keys.forEach(student => {
-    let preference = map[student];
-    preference = preference.filter(selection => all_keys.includes(selection));
-    const key_copy = Object.assign([], all_keys);
-    key_copy.splice(key_copy.indexOf(student, 0), 1);
-    preference.forEach(selection => {
-      const index = key_copy.indexOf(selection, 0);
-      if (index > -1) {
-        key_copy.splice(index, 1);
-      }
+export const filterMatches =
+  (preferences: PreferenceRecord,
+      matches: [string, string][]): PreferenceRecord => {
+    const state = JSON.parse(JSON.stringify(preferences.student_prefs[0]));
+    const matched = matches.reduce((acc, r) =>
+      acc.concat([r[0], r[1]]), <string[]>[]);
+    matched.forEach((student) => {
+      delete state[student];
     });
-    map[student] = preference.concat(key_copy);
-  });
-  return preferences;
-}
+    Object.keys(state).forEach((key) => {
+      log("Filtering out " + key + " (" + state[key] + ")");
+      state[key] = state[key].filter((word: string) =>
+        !matched.includes(word));
+    });
+    return {student_prefs: [state]};
+  };
+
+export const sanityCheckAndFixupLists =
+  (preferences: PreferenceRecord): PreferenceRecord => {
+    const map = preferences.student_prefs[0];
+    const allKeys = Object.keys(map);
+    allKeys.forEach((student) => {
+      let preference = map[student];
+      preference = preference.filter((selection) =>
+        allKeys.includes(selection));
+      const keyCopy = Object.assign([], allKeys);
+      keyCopy.splice(keyCopy.indexOf(student, 0), 1);
+      preference.forEach((selection) => {
+        const index = keyCopy.indexOf(selection, 0);
+        if (index > -1) {
+          keyCopy.splice(index, 1);
+        }
+      });
+      map[student] = preference.concat(keyCopy);
+    });
+    return preferences;
+  };
 
 export const solve = (preferences: PreferenceRecord): Assignment => {
-  log_buffer = <string[]>[];
-  let matches = <[string,string][]>[];  
+  logBuffer = <string[]>[];
+  let matches = <[string, string][]>[];
   const reasons = [];
-  let bogo_match = false;
-  let preferences_to_match = sanity_check_and_fixup_lists(preferences);
-  console.log("Starting solver with " + Object.keys(preferences.student_prefs[0]).length + " preferences");
-  while (matches.length < Math.floor(Object.keys(preferences.student_prefs[0]).length/2)) {
+  let bogoMatch = false;
+  let preferencesToMatch = sanityCheckAndFixupLists(preferences);
+  console.log(
+      "Starting solver with " +
+      Object.keys(preferences.student_prefs[0]).length +
+      " preferences"
+  );
+  while (matches.length < Math.floor(
+      Object.keys(preferences.student_prefs[0]).length/2)
+  ) {
     log("Attempting to find a solution");
     let assignment: Assignment;
-    if (!bogo_match) {
-      assignment = solve_for_stable(preferences_to_match);
+    if (!bogoMatch) {
+      assignment = solveForStable(preferencesToMatch);
     } else {
-      assignment = bogo_solve(preferences_to_match);
+      assignment = bogoSolve(preferencesToMatch);
     }
-    console.log("Got assignment for " + (assignment.matching.length * 2) + " participants");
+    console.log("Got assignment for " +
+      (assignment.matching.length * 2) + " participants");
     if (assignment.reason !== undefined) {
       reasons.push(assignment.reason);
     }
     if (assignment.matching.length > 0) {
       matches = matches.concat(assignment.matching);
       console.log("Got matches", matches);
-      if (assignment.matching.length < Math.floor(Object.keys(preferences.student_prefs[0]).length/2)) {
+      if (assignment.matching.length <
+        Math.floor(Object.keys(preferences.student_prefs[0]).length/2)) {
         console.log("Filtering preferences");
-        preferences_to_match = filter_matches(preferences_to_match, matches);
+        preferencesToMatch = filterMatches(preferencesToMatch, matches);
       }
     } else {
-      bogo_match = true
-      log_buffer.forEach(line => {
+      bogoMatch = true;
+      logBuffer.forEach((line) => {
         console.log(line);
       });
     }
   }
 
-  const result: Assignment = { matching: matches };
+  const result: Assignment = {matching: matches};
 
-  const matched = matches.reduce((acc, r) => acc.concat([r[0], r[1]]), <string[]>[]);
+  const matched = matches.reduce((acc, r) =>
+    acc.concat([r[0], r[1]]), <string[]>[]);
   if (matched.length < Object.keys(preferences.student_prefs[0]).length) {
     const unmatched: string[] = [];
-    Object.keys(preferences.student_prefs[0]).forEach(student => {
+    Object.keys(preferences.student_prefs[0]).forEach((student) => {
       if (!matched.includes(student)) {
         unmatched.push(student);
       }
@@ -301,4 +363,4 @@ export const solve = (preferences: PreferenceRecord): Assignment => {
   }
 
   return result;
-} 
+};
