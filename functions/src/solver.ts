@@ -122,16 +122,23 @@ export const executePhase1 =
     log("Phase 1 complete");
   };
 
-export const unstable =
+export const isStable =
   (state: {[key: string]: ProposerState}): boolean => {
-    let isUnstable = false;
+    let stable = true;
     Object.keys(state).forEach((name) => {
-      if (state[name].preferences.length === 0) {
-        isUnstable = true;
+      if (state[name].preferences.length == 0) {
+        // no reduced list is empty
+        stable = false;
+      } else if (lastPreference(state, state[name].preferences[0]) != name) {
+        // p is first on q's reduced list if and only if q is last on p's
+        stable = false;
       }
+      /* p is not on q's reduced list if and only if q is not on p's
+        * if and only if q prefers the last person on their list to p;
+        * or p, the last person on their list to q */
     });
-    log("Map unstable? " + isUnstable);
-    return isUnstable;
+    log("Map stable? " + stable);
+    return stable;
   };
 
 export const minimalStable =
@@ -142,9 +149,15 @@ export const minimalStable =
         stable = false;
       }
     });
-    log("Map stable? " + stable);
+    log("Map stable and minimal? " + stable);
     return stable;
   };
+
+const lastPreference =
+  (state: {[key: string]: ProposerState}, name: string): string => {
+    const preferences = state[name].preferences;
+    return preferences[preferences.length - 1];
+  }
 
 export const calculateNextLoopEntry =
   (currentEntry: [string, string],
@@ -212,14 +225,26 @@ export const removeLoop =
       log("Removing the head of " + cell[0] + "'s preferences");
       state[cell[0]].preferences = state[cell[0]].preferences.slice(1);
       log("After R1: " + JSON.stringify(state, undefined, 2));
+      const removedItems = state[cell[1]]
+        .preferences
+        .slice(state[cell[1]]
+            .preferences
+            .indexOf(previousCell[0]) + 1,
+            state[cell[1]].preferences.length + 1);
       log("Removing everything after " +
         previousCell[0] +
-        " from " + cell[1] + "'s prefernces");
+        " from " + cell[1] + "'s preferences, i.e. " +
+        removedItems.join(", "));
       state[cell[1]].preferences = state[cell[1]]
           .preferences
           .slice(0, state[cell[1]]
               .preferences
               .indexOf(previousCell[0]) + 1);
+      removedItems.forEach((target) => {
+        log("Removing " + cell[1] + " from " + target +
+          "'s preferences");
+        state[target].preferences = state[target].preferences.filter((a) => a !== cell[1]);
+      });
       log("After R2: " + JSON.stringify(state, undefined, 2));
     }
   };
@@ -235,11 +260,11 @@ export const solveForStable = (preferences: PreferenceRecord): Assignment => {
   log("Input Table: " + JSON.stringify(map, undefined, 2));
 
   executePhase1(map, false);
-  if (unstable(map)) {
+  if (!isStable(map)) {
     return {matching: [], reason: "Unstable map"};
   }
   log("Phase 1 Table: " + JSON.stringify(map, undefined, 2));
-  while (!unstable(map) && !minimalStable(map)) {
+  while (isStable(map) && !minimalStable(map)) {
     const loop = findLoop(map);
     log("Found loop: " + JSON.stringify(loop));
     if (loop.length > 0) {
@@ -302,6 +327,12 @@ export const sanityCheckAndFixupLists =
     return preferences;
   };
 
+export function dumpConsoleLog() {
+  logBuffer.forEach((line) => {
+    console.log(line);
+  });
+}
+
 export const solve = (preferences: PreferenceRecord): Assignment => {
   logBuffer = <string[]>[];
   let matches = <[string, string][]>[];
@@ -338,9 +369,7 @@ export const solve = (preferences: PreferenceRecord): Assignment => {
       }
     } else {
       bogoMatch = true;
-      logBuffer.forEach((line) => {
-        console.log(line);
-      });
+      dumpConsoleLog();
     }
   }
 

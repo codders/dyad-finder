@@ -62,4 +62,23 @@ describe("test solver api", () => {
         solution
     );
   });
+
+  it("returns a match for error case #2 (Github Issue #35)", () => {
+    const solution = solver.solve({
+      student_prefs: [
+        {
+          A: ["D", "E"],
+          B: ["E", "F"],
+          C: ["D", "A"],
+          D: ["E", "B"],
+          E: ["F", "A"],
+          F: ["C", "E"],
+        },
+      ],
+    });
+    assert.deepEqual(
+      {matching: [["A","D"], ["B","C"], ["E","F"]]},
+      solution
+    )
+  });
 });
